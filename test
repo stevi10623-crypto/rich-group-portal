@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steve's Dev & Data — Agent Growth Portal</title>
+<style>
+  :root{
+    --navy:#1f3a5f; --navy2:#16293f; --accent:#2e75b6; --teal:#2bb3a3;
+    --green:#2e7d32; --amber:#8a6d00; --red:#b3261e; --grey:#5b6675;
+    --bg:#eef1f5; --card:#ffffff; --line:#e1e6ec; --soft:#f5f8fb;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#1d2733}
+  /* ===== LOGIN ===== */
+  #login{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(1200px 600px at 70% -10%,#26456b,#16293f);}
+  .lcard{width:380px;max-width:92vw;background:#fff;border-radius:18px;padding:34px 32px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+  .logo{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+  .mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--teal),var(--accent));color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;letter-spacing:-.5px}
+  .logo .ln{font-weight:800;font-size:16px;color:var(--navy)}
+  .logo .ls{font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:2px}
+  .lcard h2{font-size:19px;color:var(--navy);margin:18px 0 4px}
+  .lcard .sub{font-size:13px;color:var(--grey);margin-bottom:20px}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px}
+  .field input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft)}
+  .field input:focus{outline:none;border-color:var(--accent);background:#fff}
+  .lbtn{width:100%;margin-top:8px;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px;font-size:14.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .lbtn:hover{filter:brightness(1.08)}
+  .lhint{margin-top:14px;font-size:11.5px;color:#9aa6b4;text-align:center}
+  .lfoot{margin-top:20px;text-align:center;font-size:11px;color:#b6c0cc}
+  /* ===== APP ===== */
+  #app{display:none;min-height:100vh}
+  #app.show{display:flex}
+  .sidebar{width:230px;background:linear-gradient(180deg,var(--navy),var(--navy2));color:#dce6f2;display:flex;flex-direction:column;flex-shrink:0}
+  .brand{padding:18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+  .brand .mark{width:34px;height:34px;font-size:15px;border-radius:9px}
+  .brand .bt{font-weight:800;font-size:14.5px;color:#fff;line-height:1.1}
+  .brand .bs{font-size:9px;color:#9fb6d2;text-transform:uppercase;letter-spacing:1.5px}
+  .nav{padding:12px 10px;flex:1}
+  .nav button{width:100%;text-align:left;background:none;border:0;color:#c6d6e8;padding:11px 14px;border-radius:9px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:11px;margin-bottom:3px;transition:.15s}
+  .nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+  .nav button.active{background:var(--accent);color:#fff;font-weight:600}
+  .nav .ic{width:18px;text-align:center;font-size:15px}
+  .nav .badge{margin-left:auto;background:var(--teal);color:#04332e;font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px}
+  .sidefoot{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#8fa6c2}
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;gap:16px}
+  .topbar h1{font-size:18px;font-weight:700;color:var(--navy)}
+  .switcher{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .switcher select{padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft);color:#1d2733;font-weight:600}
+  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer}
+  .content{padding:24px 26px;overflow:auto}
+  .page{display:none}
+  .page.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .kpi .label{font-size:12px;color:var(--grey);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  .kpi .val{font-size:28px;font-weight:800;color:var(--navy);margin:6px 0 2px}
+  .kpi .chg{font-size:12px;font-weight:600}
+  .chg.up{color:var(--green)} .chg.flat{color:var(--amber)} .chg.down{color:var(--red)}
+  .section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:18px}
+  .section h2{font-size:15px;color:var(--navy);margin-bottom:4px}
+  .section .desc{font-size:13px;color:var(--grey);margin-bottom:16px}
+  .row{display:flex;gap:18px;flex-wrap:wrap}
+  .col{flex:1;min-width:280px}
+  .bars{display:flex;align-items:flex-end;gap:10px;height:150px;padding-top:10px}
+  .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px}
+  .bar .b{width:60%;background:linear-gradient(180deg,var(--accent),var(--teal));border-radius:6px 6px 0 0;min-height:4px}
+  .bar .bl{font-size:11px;color:var(--grey)}
+  .bar .bv{font-size:11px;font-weight:700;color:var(--navy)}
+  .qcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;background:#fff}
+  .qcard.done{opacity:.55}
+  .qhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
+  .t-blog{background:#e7f0fb;color:var(--accent)} .t-gbp{background:#e7f7f0;color:var(--green)}
+  .t-social{background:#f3e9fb;color:#7a2fb0} .t-review{background:#fdf0e3;color:var(--amber)}
+  .qhead .ttl{font-weight:700;font-size:14.5px;color:#1d2733}
+  .qhead .when{margin-left:auto;font-size:12px;color:var(--grey)}
+  .qbody{font-size:13px;color:#46505e;line-height:1.55;background:var(--soft);border-radius:9px;padding:11px 13px;margin-bottom:12px}
+  .qactions{display:flex;gap:9px;align-items:center}
+  .btn{border:0;border-radius:9px;padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn-approve{background:var(--green);color:#fff} .btn-approve:hover{filter:brightness(1.08)}
+  .btn-edit{background:var(--soft);color:#1d2733;border:1px solid var(--line)}
+  .btn-reject{background:#fff;color:var(--red);border:1px solid #f1c9c6}
+  .status-pill{margin-left:auto;font-size:12px;font-weight:700}
+  .sp-sched{color:var(--green)} .sp-rej{color:var(--red)}
+  .rev{border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:11px}
+  .rev .rh{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .rev .name{font-weight:700;font-size:13.5px}
+  .stars{color:#f2a600;font-size:13px}
+  .rev .src{margin-left:auto;font-size:11px;color:var(--grey);background:var(--soft);padding:2px 8px;border-radius:10px}
+  .rev .txt{font-size:13px;color:#46505e;line-height:1.5}
+  .rev .reply{margin-top:9px;font-size:12.5px;color:var(--accent);font-weight:600;cursor:pointer}
+  .addons{grid-template-columns:repeat(3,1fr)}
+  .addon{border:1px solid var(--line);border-radius:13px;padding:16px;background:#fff;display:flex;flex-direction:column;gap:8px}
+  .addon .an{font-weight:700;font-size:14px;color:var(--navy)}
+  .addon .ad{font-size:12.5px;color:var(--grey);line-height:1.5;flex:1}
+  .toggle{display:flex;align-items:center;gap:9px;margin-top:6px}
+  .sw{width:42px;height:23px;border-radius:20px;background:#cdd6e0;position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+  .sw.on{background:var(--teal)}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s}
+  .sw.on::after{left:21px}
+  .sw-label{font-size:12px;font-weight:600;color:var(--grey)}
+  .pill{display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:20px;padding:3px 11px;font-size:11.5px;color:var(--grey);font-weight:600}
+  .banner{background:linear-gradient(100deg,#eaf2fb,#e7f7f3);border:1px solid #d4e6f2;border-radius:14px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:14px}
+  .banner .bigdot{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(43,179,163,.2)}
+  .banner b{color:var(--navy)}
+  .muted{font-size:12px;color:var(--grey)}
+  @media(max-width:880px){.sidebar{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.addons{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+  <!-- ===== LOGIN ===== -->
+  <div id="login">
+    <div class="lcard">
+      <div class="logo">
+        <div class="mark">SD</div>
+        <div><div class="ln">Steve's Dev &amp; Data</div><div class="ls">Agent Growth Portal</div></div>
+      </div>
+      <h2>Welcome back</h2>
+      <div class="sub">Sign in to review and approve your marketing.</div>
+      <form id="loginForm">
+        <div class="field"><label>Email</label><input type="email" id="email" value="anita@therichgroup.la" autocomplete="username"></div>
+        <div class="field"><label>Password</label><input type="password" id="pass" value="demo1234" autocomplete="current-password"></div>
+        <button class="lbtn" type="submit">Sign in</button>
+      </form>
+      <div class="lhint">Demo portal · credentials pre-filled — just click Sign in</div>
+      <div class="lfoot">Powered by Steve's Dev &amp; Data · (818) 371-8488</div>
+    </div>
+  </div>
+
+  <!-- ===== APP ===== -->
+  <div id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">SD</div>
+        <div><div class="bt">Steve's Dev &amp; Data</div><div class="bs">Growth Portal</div></div>
+      </div>
+      <nav class="nav" id="nav">
+        <button data-p="dash" class="active"><span class="ic">▣</span> Dashboard</button>
+        <button data-p="queue"><span class="ic">✎</span> Approval Queue <span class="badge" id="qbadge">4</span></button>
+        <button data-p="content"><span class="ic">▤</span> Content</button>
+        <button data-p="reviews"><span class="ic">★</span> Reviews</button>
+        <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
+        <button data-p="settings"><span class="ic">⚙</span> Settings</button>
+      </nav>
+      <div class="sidefoot">Pilot tenant: The Rich Group<br><span id="logout" style="cursor:pointer;color:#c6d6e8;text-decoration:underline">Sign out</span></div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="switcher">
+          <span class="muted">Agent:</span>
+          <select id="tenant">
+            <option>The Rich Group — Anita Rich</option>
+            <option>+ Add new agent…</option>
+          </select>
+          <div class="avatar">AR</div>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <section class="page active" id="dash">
+          <div class="banner">
+            <div class="bigdot"></div>
+            <div><b>Baseline captured June 24, 2026.</b> <span class="muted">Goal: claim Google, grow reviews, and rank for non-branded local searches within 90 days.</span></div>
+          </div>
+          <div class="grid kpis">
+            <div class="kpi"><div class="label">Google Reviews</div><div class="val">5</div><div class="chg flat">Goal 50 · unclaimed profile</div></div>
+            <div class="kpi"><div class="label">All-Platform Rating</div><div class="val">4.8★</div><div class="chg up">43 reviews on Zillow + Yelp</div></div>
+            <div class="kpi"><div class="label">"Sherman Oaks agent" rank</div><div class="val">—</div><div class="chg down">Not in top results yet</div></div>
+            <div class="kpi"><div class="label">Leads this month</div><div class="val">0</div><div class="chg flat">Funnel not live</div></div>
+          </div>
+          <div class="row" style="margin-top:18px">
+            <div class="col section" style="margin-top:0">
+              <h2>Review growth (projected)</h2>
+              <div class="desc">Google reviews — where the 90-day plan moves the needle.</div>
+              <div class="bars">
+                <div class="bar"><div class="bv">5</div><div class="b" style="height:14%"></div><div class="bl">Now</div></div>
+                <div class="bar"><div class="bv">14</div><div class="b" style="height:33%"></div><div class="bl">30d</div></div>
+                <div class="bar"><div class="bv">28</div><div class="b" style="height:62%"></div><div class="bl">60d</div></div>
+                <div class="bar"><div class="bv">45</div><div class="b" style="height:96%"></div><div class="bl">90d</div></div>
+              </div>
+            </div>
+            <div class="col section" style="margin-top:0">
+              <h2>This week</h2>
+              <div class="desc">What needs your attention.</div>
+              <div style="font-size:13.5px;line-height:2.1;color:#46505e">
+                <div>🟢 <b>4 items</b> waiting for your approval</div>
+                <div>🟠 Google Business Profile still <b>unclaimed</b></div>
+                <div>🟠 Address mismatch on Yelp (old Sherman Oaks)</div>
+                <div>🟢 Blog post #1 drafted &amp; ready</div>
+                <div>🟢 6 client review requests queued</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="queue">
+          <div class="section" style="margin-top:0">
+            <h2>Approval Queue</h2>
+            <div class="desc">Nothing goes live until you approve it. Review, edit, or reject — from anywhere.</div>
+            <div id="queueList"></div>
+          </div>
+        </section>
+
+        <section class="page" id="content">
+          <div class="section" style="margin-top:0">
+            <h2>Content calendar</h2>
+            <div class="desc">Scheduled and published items.</div>
+            <div style="font-size:13.5px;line-height:2.2;color:#46505e">
+              <div><span class="pill">Scheduled</span> &nbsp; Jul 1 — Blog: "Studio City vs. Sherman Oaks" guide</div>
+              <div><span class="pill">Scheduled</span> &nbsp; Jul 5 — GBP post: free home valuation</div>
+              <div><span class="pill" style="color:var(--green);border-color:#bfe3c8">Published</span> &nbsp; Jun 24 — FAQ section added to homepage</div>
+              <div><span class="pill" style="color:var(--green);border-color:#bfe3c8">Published</span> &nbsp; Jun 22 — Page titles &amp; metas refreshed</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="reviews">
+          <div class="section" style="margin-top:0">
+            <h2>Reviews</h2>
+            <div class="desc">Monitor and respond across Google, Yelp, and Zillow.</div>
+            <div class="rev"><div class="rh"><span class="name">Maria S.</span><span class="stars">★★★★★</span><span class="src">Google · new</span></div><div class="txt">"Anita made selling our Sherman Oaks home effortless. Couldn't recommend her more!"</div><div class="reply">↳ Draft a reply</div></div>
+            <div class="rev"><div class="rh"><span class="name">Kira W.</span><span class="stars">★★★★★</span><span class="src">Zillow</span></div><div class="txt">"She understands the market and knows who the players are…"</div><div class="reply">↳ Draft a reply</div></div>
+            <div class="rev"><div class="rh"><span class="name">Lori R.</span><span class="stars">★★☆☆☆</span><span class="src">Yelp · needs attention</span></div><div class="txt">"Still getting emails after I unsubscribed…"</div><div class="reply">↳ Draft a professional response</div></div>
+          </div>
+        </section>
+
+        <section class="page" id="addons">
+          <div class="section" style="margin-top:0">
+            <h2>Add-on services</h2>
+            <div class="desc">Toggle services on to add them to this agent's plan. Priced separately.</div>
+            <div class="grid addons" id="addonGrid"></div>
+          </div>
+        </section>
+
+        <section class="page" id="settings">
+          <div class="section" style="margin-top:0">
+            <h2>Agent settings</h2>
+            <div class="desc">Tenant configuration (what makes this multi-tenant).</div>
+            <div style="font-size:13.5px;line-height:2.2;color:#46505e">
+              <div><b>Business:</b> The Rich Group</div>
+              <div><b>Address:</b> 12711 Ventura Blvd #110, Studio City, CA 91604</div>
+              <div><b>Phone:</b> (818) 632-2258</div>
+              <div><b>Markets:</b> Sherman Oaks, Studio City, Valley Village, Encino +</div>
+              <div><b>Brand voice:</b> Warm, expert, 30+ years, no hype</div>
+              <div><b>Plan:</b> Growth · <b>Cadence:</b> 2 posts / month</div>
+              <div><b>Connected:</b> Google Business <span style="color:var(--amber)">(pending claim)</span>, Website, Instagram, YouTube</div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ---- login ----
+  var login=document.getElementById("login"), app=document.getElementById("app");
+  function enter(){ login.style.display="none"; app.classList.add("show"); }
+  document.getElementById("loginForm").addEventListener("submit",function(e){ e.preventDefault(); enter(); });
+  document.getElementById("logout").addEventListener("click",function(){ app.classList.remove("show"); login.style.display="flex"; });
+
+  // ---- state ----
+  var KEY="sdd_portal_v2";
+  var state=JSON.parse(localStorage.getItem(KEY)||"{}");
+  state.queue=state.queue||{};
+  state.addons=state.addons||{funnels:false,ads:false,podcast:false,avatar:false,assistant:false,reactivation:false};
+  function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
+
+  // ---- nav ----
+  var titles={dash:"Dashboard",queue:"Approval Queue",content:"Content",reviews:"Reviews",addons:"Add-ons",settings:"Settings"};
+  document.getElementById("nav").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b)return;
+    document.querySelectorAll(".nav button").forEach(function(x){x.classList.remove("active")});
+    b.classList.add("active");
+    var pg=b.getAttribute("data-p");
+    document.querySelectorAll(".page").forEach(function(x){x.classList.remove("active")});
+    document.getElementById(pg).classList.add("active");
+    document.getElementById("pageTitle").textContent=titles[pg];
+  });
+
+  // ---- queue ----
+  var QUEUE=[
+    {id:"q1",tag:"t-blog",label:"Blog",ttl:"Sherman Oaks Housing Market Update — Q3 2026",when:"drafted today",body:"As of mid-2026, the median single-family home in Sherman Oaks is selling in the $1.45M–$1.6M range… [full 700-word post ready, MLS figures flagged for your confirmation]"},
+    {id:"q2",tag:"t-gbp",label:"Google Post",ttl:"Just Sold in Studio City 🏡",when:"drafted today",body:"Another happy family moved on to their next chapter! Thinking of selling? With 30+ years in the Valley, The Rich Group gets it done. Call (818) 632-2258."},
+    {id:"q3",tag:"t-social",label:"Instagram",ttl:"Reel caption — 3 reasons buyers love Valley Village",when:"drafted today",body:"Tree-lined streets, walkable charm, and real value vs. the hills. Here are 3 reasons buyers keep choosing Valley Village 👇 #valleyvillage #sfvrealestate"},
+    {id:"q4",tag:"t-review",label:"Review Reply",ttl:"Reply to Maria S. (5★ Google)",when:"new review",body:"Thank you so much, Maria! It was a joy helping you sell your Sherman Oaks home. Wishing you all the best in this next chapter. — Anita"}
+  ];
+  function renderQueue(){
+    var list=document.getElementById("queueList"); list.innerHTML="";
+    var pending=0;
+    QUEUE.forEach(function(item){
+      var st=state.queue[item.id];
+      if(!st)pending++;
+      var div=document.createElement("div");
+      div.className="qcard"+(st?" done":"");
+      var actions = st
+        ? '<span class="status-pill '+(st==="scheduled"?"sp-sched":"sp-rej")+'">'+(st==="scheduled"?"✓ Approved & scheduled":"✕ Rejected")+'</span>'
+        : '<button class="btn btn-approve" data-act="scheduled" data-id="'+item.id+'">Approve</button>'
+         +'<button class="btn btn-edit" data-id="'+item.id+'">Edit</button>'
+         +'<button class="btn btn-reject" data-act="rejected" data-id="'+item.id+'">Reject</button>';
+      div.innerHTML='<div class="qhead"><span class="tag '+item.tag+'">'+item.label+'</span>'
+        +'<span class="ttl">'+item.ttl+'</span><span class="when">'+item.when+'</span></div>'
+        +'<div class="qbody">'+item.body+'</div>'
+        +'<div class="qactions">'+actions+'</div>';
+      list.appendChild(div);
+    });
+    var bd=document.getElementById("qbadge");
+    bd.textContent=pending; bd.style.display=pending?"inline-block":"none";
+  }
+  document.getElementById("queueList").addEventListener("click",function(e){
+    var b=e.target.closest("button[data-act]");
+    if(b){ state.queue[b.getAttribute("data-id")]=b.getAttribute("data-act"); save(); renderQueue(); return; }
+    if(e.target.closest(".btn-edit")){ alert("In the live app this opens an inline editor to tweak the copy before approving."); }
+  });
+
+  // ---- addons ----
+  var ADDONS=[
+    {k:"funnels",n:"Lead-Capture Funnels",d:"Landing pages + automated follow-up that capture buyer and seller leads."},
+    {k:"ads",n:"IG / TikTok / Google Ads",d:"Managed paid campaigns to put listings and brand in front of local buyers."},
+    {k:"podcast",n:"Podcast (Your Voice)",d:"A branded show in your cloned voice, repurposed into social clips."},
+    {k:"avatar",n:"AI Avatar Video",d:"Market updates & listing intros delivered by an avatar with your face & voice."},
+    {k:"assistant",n:"24/7 AI Website Assistant",d:"Answers visitors, qualifies leads, and books showings around the clock."},
+    {k:"reactivation",n:"Database Reactivation",d:"Automated email/SMS to past clients that shakes loose new listings."}
+  ];
+  function renderAddons(){
+    var g=document.getElementById("addonGrid"); g.innerHTML="";
+    ADDONS.forEach(function(a){
+      var on=state.addons[a.k];
+      var d=document.createElement("div"); d.className="addon";
+      d.innerHTML='<div class="an">'+a.n+'</div><div class="ad">'+a.d+'</div>'
+        +'<div class="toggle"><div class="sw'+(on?" on":"")+'" data-k="'+a.k+'"></div>'
+        +'<span class="sw-label">'+(on?"Active":"Off")+'</span></div>';
+      g.appendChild(d);
+    });
+  }
+  document.getElementById("addonGrid").addEventListener("click",function(e){
+    var s=e.target.closest(".sw"); if(!s)return;
+    var k=s.getAttribute("data-k"); state.addons[k]=!state.addons[k]; save(); renderAddons();
+  });
+
+  document.querySelectorAll(".rev .reply").forEach(function(r){
+    r.addEventListener("click",function(){ alert("In the live app this generates a professional draft reply and drops it into your Approval Queue."); });
+  });
+
+
+  renderQueue(); renderAddons();
+})();
+</script>
+</body>
+</html>

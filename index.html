@@ -175,7 +175,6 @@
         <button data-p="inbox"><span class="ic">✉</span> Requests <span class="badge" id="inboxBadge" style="display:none">0</span></button>
         <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
         <button data-p="seo"><span class="ic">⌖</span> SEO Plan</button>
-        <button data-p="settings"><span class="ic">⚙</span> Settings</button>
         </div>
       </nav>
       <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.08)">
@@ -194,6 +193,7 @@
             <option>The Rich Group — Anita Rich</option>
             <option>+ Add new agent…</option>
           </select>
+          <button id="gearBtn" title="Settings" style="background:var(--soft);border:1px solid var(--line);color:var(--text);width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:16px">⚙</button>
           <div class="avatar">AR</div>
         </div>
       </div>
@@ -706,6 +706,7 @@
     if(!navHistory.length) return;
     gotoPage(navHistory.pop(), true);
   });
+  document.getElementById("gearBtn").addEventListener("click",function(){ gotoPage("settings"); });
 
   // ---- queue (real campaign content + server-side agent drafts) ----
   var QUEUE=(window.CAMPAIGN&&window.CAMPAIGN.queue)||[];

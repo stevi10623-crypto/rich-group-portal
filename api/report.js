@@ -6,22 +6,28 @@ const path = require("path");
 const DIR = path.join(__dirname, "..", "data");
 function read(f) { try { return JSON.parse(fs.readFileSync(path.join(DIR, f), "utf8")); } catch { return null; } }
 
-function since(period) {
+function windowFor(q) {
   const now = Date.now();
   const day = 864e5;
-  if (period === "day") return now - day;
-  if (period === "month") return now - 30 * day;
-  return now - 7 * day; // week default
+  const period = q.period || "week";
+  if (period === "custom" && q.from) {
+    return { start: new Date(q.from).getTime(), end: q.to ? new Date(q.to).getTime() + day : now, period };
+  }
+  const span = period === "day" ? day : period === "month" ? 30 * day : period === "year" ? 365 * day : 7 * day;
+  return { start: now - span, end: now, period };
 }
 
 module.exports = async (req, res) => {
   try {
-    const period = ((req.query || {}).period) || "week";
-    const cutoff = since(period);
+    const q = req.query || {};
+    const win = windowFor(q);
+    const period = win.period;
+    const cutoff = win.start;
+    const within = (t) => { const x = new Date(t).getTime(); return x >= win.start && x <= win.end; };
 
     // ---- Leads ----
     const leads = read("leads.json") || [];
-    const inPeriod = leads.filter((l) => new Date(l.at).getTime() >= cutoff);
+    const inPeriod = leads.filter((l) => within(l.at));
     const bySource = {};
     inPeriod.forEach((l) => { bySource[l.source || "unknown"] = (bySource[l.source || "unknown"] || 0) + 1; });
     const topSource = Object.entries(bySource).sort((a, b) => b[1] - a[1])[0];
@@ -45,7 +51,7 @@ module.exports = async (req, res) => {
     const drafts = read("drafts.json") || [];
     const agentPosts = drafts.filter((d) => String(d.id).startsWith("agent_")).length;
     const ads = (read("ads.json") || {}).ads || [];
-    const adsInPeriod = ads.filter((a) => new Date(a.at).getTime() >= cutoff).length;
+    const adsInPeriod = ads.filter((a) => within(a.at)).length;
 
     // ---- Pivot recommendation ----
     const recs = [];

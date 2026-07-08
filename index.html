@@ -308,7 +308,8 @@
         <section class="page" id="queue">
           <div class="section" style="margin-top:0">
             <h2>Approval Queue</h2>
-            <div class="desc">Nothing goes live until you approve it. Review, edit, or reject — from anywhere.</div>
+            <div class="desc">Nothing goes live until you approve it. Review, edit, rewrite, or reject.</div>
+            <div id="queueTabs" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"></div>
             <div id="queueList"></div>
           </div>
         </section>
@@ -527,7 +528,7 @@
                 <button class="btn btn-edit" id="cardCopy" style="padding:8px 14px">Copy link</button>
               </div>
               <div style="border:1px solid var(--line);border-radius:14px;overflow:hidden;max-width:360px">
-                <iframe id="cardFrame" src="/c" style="width:100%;height:520px;border:0"></iframe>
+                <iframe id="cardFrame" src="/c" style="width:100%;height:680px;border:0"></iframe>
               </div>
             </div>
           </div>
@@ -675,25 +676,35 @@
     }).catch(function(){});
   }
   function esc(s){ var d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
+  var queueFilter="pending";
+  function qGroup(st){ if(!st)return "pending"; if(st==="rejected")return "rejected"; return "approved"; }
   function renderQueue(){
     var list=document.getElementById("queueList"); list.innerHTML="";
-    var pending=0;
     var all = SERVER_DRAFTS.concat(state.items, QUEUE);
+    var counts={pending:0,approved:0,rejected:0};
+    all.forEach(function(item){ counts[qGroup(state.queue[item.id])]++; });
+    var tabs=document.getElementById("queueTabs");
+    if(tabs) tabs.innerHTML=[["pending","Pending"],["approved","Approved"],["rejected","Rejected"],["all","All"]].map(function(t){
+      var n=t[0]==="all"?all.length:counts[t[0]];
+      return '<button class="btn '+(queueFilter===t[0]?"btn-approve":"btn-edit")+'" data-qf="'+t[0]+'" style="padding:7px 14px">'+t[1]+' ('+n+')</button>';
+    }).join("");
     all.forEach(function(item){
       var st=state.queue[item.id];
-      if(!st)pending++;
+      if(queueFilter!=="all" && qGroup(st)!==queueFilter) return;
       var div=document.createElement("div");
       div.className="qcard"+(st?" done":"");
       var statusHtml = st==="scheduled" ? "✓ Approved & scheduled"
                      : st==="published" ? "✓ Approved — sent to publisher"
                      : st==="staged"    ? "✓ Approved — queued to publish (publisher offline)"
-                     : "✕ Rejected";
-      var actions = st
-        ? '<span class="status-pill '+(st==="rejected"?"sp-rej":"sp-sched")+'">'+statusHtml+'</span>'
-        : '<button class="btn btn-approve" data-act="approve" data-id="'+item.id+'">'+(item.publish?"Approve & Publish":"Approve")+'</button>'
+                     : st==="rejected"  ? "✕ Rejected"
+                     : "✓ Approved";
+      var actions;
+      if(st==="rejected"){ actions='<span class="status-pill sp-rej">✕ Rejected</span><button class="btn btn-approve" data-restore="'+item.id+'" style="margin-left:8px">↩ Restore</button>'; }
+      else if(st){ actions='<span class="status-pill sp-sched">'+statusHtml+'</span><button class="btn btn-edit" data-restore="'+item.id+'" style="margin-left:8px">↩ Move to pending</button>'; }
+      else { actions='<button class="btn btn-approve" data-act="approve" data-id="'+item.id+'">'+(item.publish?"Approve & Publish":"Approve")+'</button>'
          +'<button class="btn btn-edit" data-edit="'+item.id+'">Edit</button>'
          +'<button class="btn btn-edit" data-rewrite="'+item.id+'">↻ Rewrite</button>'
-         +'<button class="btn btn-reject" data-act="rejected" data-id="'+item.id+'">Reject</button>';
+         +'<button class="btn btn-reject" data-act="rejected" data-id="'+item.id+'">Reject</button>'; }
       div.innerHTML='<div class="qhead"><span class="tag '+item.tag+'">'+esc(item.label)+'</span>'
         +'<span class="ttl">'+esc(item.ttl)+'</span><span class="when">'+esc(item.when)+'</span></div>'
         +(item.image?'<img src="'+item.image+'" style="max-width:280px;border-radius:9px;margin-bottom:10px;display:block">':'')
@@ -701,11 +712,15 @@
         +'<div class="qactions">'+actions+'</div>';
       list.appendChild(div);
     });
+    if(!list.innerHTML) list.innerHTML='<div class="muted">Nothing '+queueFilter+' right now.</div>';
     var bd=document.getElementById("qbadge");
-    bd.textContent=pending; bd.style.display=pending?"inline-block":"none";
+    bd.textContent=counts.pending; bd.style.display=counts.pending?"inline-block":"none";
   }
   function findItem(id){ return SERVER_DRAFTS.concat(state.items, QUEUE).find(function(x){return x.id===id}); }
+  document.getElementById("queueTabs").addEventListener("click",function(e){ var b=e.target.closest("[data-qf]"); if(!b)return; queueFilter=b.getAttribute("data-qf"); renderQueue(); });
   document.getElementById("queueList").addEventListener("click",function(e){
+    var rs=e.target.closest("button[data-restore]");
+    if(rs){ delete state.queue[rs.getAttribute("data-restore")]; save(); renderQueue(); return; }
     var b=e.target.closest("button[data-act]");
     if(b){
       var id=b.getAttribute("data-id"), act=b.getAttribute("data-act"), item=findItem(id);
@@ -1290,6 +1305,20 @@
     c._photo=c.photoUrl||""; c._logo=c.logoUrl||"";
     document.getElementById("cf_photo").addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){c._photo=rd.result;};rd.readAsDataURL(f);});
     document.getElementById("cf_logo").addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){c._logo=rd.result;};rd.readAsDataURL(f);});
+    document.getElementById("cf_photoGal").addEventListener("click",function(){
+      var box=document.getElementById("cf_galpick");
+      if(box.style.display==="flex"){ box.style.display="none"; return; }
+      box.style.display="flex"; box.innerHTML='<span class="muted">Loading…</span>';
+      fetch(API+"/api/gallery").then(function(r){return r.json()}).then(function(d){
+        var imgs=d.images||[]; if(!imgs.length){ box.innerHTML='<span class="muted">Gallery is empty — upload images in the Gallery tab.</span>'; return; }
+        box.innerHTML=imgs.map(function(i){var u=(location.hostname.indexOf("vercel")>-1?"https://rgapi.myroostcrm.com":"")+i.url;return '<img data-galpk="'+u+'" src="'+u+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent">';}).join("");
+      });
+    });
+    document.getElementById("cf_galpick").addEventListener("click",function(e){
+      var im=e.target.closest("[data-galpk]"); if(!im)return;
+      c._photo=im.getAttribute("data-galpk"); document.getElementById("cf_galpick").style.display="none";
+      var pmsg=document.getElementById("cardMsg"); if(pmsg){pmsg.textContent="Photo set from gallery — Save to apply."; }
+    });
   }
   function loadCards(sel){
     fetch(API+"/api/card").then(function(r){return r.json()}).then(function(d){
@@ -1488,11 +1517,13 @@
 
   // ---- Reports ----
   var rpPeriod="week";
-  document.getElementById("rpPeriod").innerHTML=["day|Daily","week|Weekly","month|Monthly"].map(function(o){var p=o.split("|");return '<button class="btn" data-rp="'+p[0]+'" style="padding:7px 13px">'+p[1]+'</button>';}).join("");
+  document.getElementById("rpPeriod").innerHTML=["week|Week","month|Month","year|Year","custom|Custom"].map(function(o){var p=o.split("|");return '<button class="btn" data-rp="'+p[0]+'" style="padding:7px 13px">'+p[1]+'</button>';}).join("")
+    +'<span id="rpCustom" style="display:none;gap:6px;align-items:center;margin-left:6px"><input type="date" id="rpFrom" style="padding:6px;border:1px solid var(--line);border-radius:8px;font-size:12px"><input type="date" id="rpTo" style="padding:6px;border:1px solid var(--line);border-radius:8px;font-size:12px"><button class="btn btn-approve" id="rpGo" style="padding:6px 12px;font-size:12px">Go</button></span>';
   function paintRp(){ document.querySelectorAll("[data-rp]").forEach(function(b){ b.className="btn "+(b.getAttribute("data-rp")===rpPeriod?"btn-approve":"btn-edit"); }); }
   function loadReport(){
     paintRp();
-    fetch(API+"/api/report?period="+rpPeriod).then(function(r){return r.json()}).then(function(d){
+    var q="period="+rpPeriod; if(rpPeriod==="custom"){ var f=document.getElementById("rpFrom"),t=document.getElementById("rpTo"); if(f&&f.value)q+="&from="+f.value; if(t&&t.value)q+="&to="+t.value; }
+    fetch(API+"/api/report?"+q).then(function(r){return r.json()}).then(function(d){
       document.getElementById("rpKpis").innerHTML=
         '<div class="kpi"><div class="label">Leads ('+d.period+')</div><div class="val">'+d.leads.total+'</div><div class="chg flat">'+d.leads.allTime+' all-time</div></div>'
         +'<div class="kpi"><div class="label">Keywords climbing</div><div class="val">'+d.seo.improving+'</div><div class="chg '+(d.seo.declining>d.seo.improving?"down":"up")+'">'+d.seo.declining+' slipping</div></div>'
@@ -1507,7 +1538,7 @@
       }).join(""):'<div class="muted">Run a rank scan on the SEO Plan page first.</div>';
     }).catch(function(){});
   }
-  document.getElementById("rpPeriod").addEventListener("click",function(e){ var b=e.target.closest("[data-rp]"); if(!b)return; rpPeriod=b.getAttribute("data-rp"); loadReport(); });
+  document.getElementById("rpPeriod").addEventListener("click",function(e){ if(e.target.id==="rpGo"){ loadReport(); return; } var b=e.target.closest("[data-rp]"); if(!b)return; rpPeriod=b.getAttribute("data-rp"); document.getElementById("rpCustom").style.display=rpPeriod==="custom"?"inline-flex":"none"; if(rpPeriod!=="custom")loadReport(); else paintRp(); });
   loadReport();
 
   renderSeo(); renderService();

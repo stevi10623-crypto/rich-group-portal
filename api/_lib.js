@@ -34,16 +34,21 @@ const STYLE = {
 };
 
 async function ollama(messages, maxTokens) {
-  const res = await fetch(`${OLLAMA_BASE}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${OLLAMA_KEY}` },
-    body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: maxTokens || 600, temperature: 0.8 }),
-  });
-  if (!res.ok) throw new Error(`Ollama ${res.status}: ${(await res.text()).slice(0, 180)}`);
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error("Empty response from the writing model");
-  return text;
+  // gpt-oss occasionally returns empty content — retry up to 3x.
+  let lastErr = "Empty response from the writing model";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${OLLAMA_BASE}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${OLLAMA_KEY}` },
+        body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: maxTokens || 600, temperature: 0.8 }),
+      });
+      if (!res.ok) { lastErr = `Ollama ${res.status}: ${(await res.text()).slice(0, 180)}`; continue; }
+      const text = (await res.json())?.choices?.[0]?.message?.content?.trim();
+      if (text) return text;
+    } catch (e) { lastErr = String(e.message || e); }
+  }
+  throw new Error(lastErr);
 }
 
 /** kind: one of STYLE keys; brief: what to write about. Returns finished copy. */

@@ -28,19 +28,41 @@ function load() { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catc
 function store(o) { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(o, null, 2)); }
 
 async function ollama(system, user, max) {
-  const res = await fetch(`${OLLAMA_BASE}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${OLLAMA_KEY}` },
-    body: JSON.stringify({ model: OLLAMA_MODEL, messages: [{ role: "system", content: system }, { role: "user", content: user }], max_tokens: max || 600, temperature: 0.7 }),
-    signal: AbortSignal.timeout(90000),
-  });
-  if (!res.ok) throw new Error(`Ollama ${res.status}`);
-  const t = (await res.json())?.choices?.[0]?.message?.content?.trim();
-  if (!t) throw new Error("empty response");
-  return t;
+  // gpt-oss occasionally returns empty content — retry up to 3x before giving up.
+  let lastErr = "empty response";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${OLLAMA_BASE}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${OLLAMA_KEY}` },
+        body: JSON.stringify({ model: OLLAMA_MODEL, messages: [{ role: "system", content: system }, { role: "user", content: user }], max_tokens: max || 600, temperature: 0.7 }),
+        signal: AbortSignal.timeout(90000),
+      });
+      if (!res.ok) { lastErr = `Ollama ${res.status}`; continue; }
+      const t = (await res.json())?.choices?.[0]?.message?.content?.trim();
+      if (t) return t;
+    } catch (e) { lastErr = String(e.message || e); }
+  }
+  throw new Error(lastErr);
 }
 
 const BRAND = "The Rich Group — Anita Rich, LA real estate (Sherman Oaks, Studio City, Valley Village; 30+ years; (818) 632-2258; therichgroup.la). No hype, no fake stats.";
+
+function jsonExtract(raw) {
+  let clean = String(raw || "").replace(/```(json)?/g, "").trim();
+  const s = clean.indexOf("{");
+  if (s < 0) return null;
+  clean = clean.slice(s);
+  const e = clean.lastIndexOf("}");
+  if (e > 0) { try { return JSON.parse(clean.slice(0, e + 1)); } catch {} }
+  // repair a truncated object: close a dangling string, drop trailing comma, add }
+  let repaired = clean.replace(/,\s*$/, "");
+  const quotes = (repaired.match(/"/g) || []).length;
+  if (quotes % 2 === 1) repaired += '"';
+  repaired += "}";
+  try { return JSON.parse(repaired); } catch {}
+  return null;
+}
 
 module.exports = async (req, res) => {
   try {
@@ -65,13 +87,13 @@ module.exports = async (req, res) => {
       let sys, ad;
       if (platform === "google") {
         sys = `You write Google Search ads for a real-estate agent. ${BRAND} ${human} Return STRICT JSON only: {"headlines":["h1","h2","h3"],"descriptions":["d1","d2"]}. Headlines must be <=30 characters each, descriptions <=90 characters each. No fake statistics.`;
-        const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it now, JSON only.`, 400);
-        let f = {}; try { f = JSON.parse(raw.replace(/```(json)?/g, "").trim()); } catch { f = { headlines: [], descriptions: [] }; }
+        const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it now, JSON only.`, 800);
+        const f = jsonExtract(raw) || { headlines: [], descriptions: [] };
         ad = { id: "ad_" + (cur.ads.length + 1), at: new Date().toISOString(), platform, goal, fields: { google: f } };
       } else {
         sys = `You write ${platform} lead ads for a real-estate agent. ${BRAND} ${human} Return STRICT JSON only: {"headline":"short headline (<=40 chars)","primaryText":"2-3 warm human sentences","description":"one short line","cta":"one of: Learn More, Get Quote, Sign Up, Contact Us","hashtags":"3-5 hashtags or empty"}. No fake statistics.`;
-        const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it now, JSON only.`, 400);
-        let f = {}; try { f = JSON.parse(raw.replace(/```(json)?/g, "").trim()); } catch { f = { headline: "", primaryText: raw, cta: "Learn More" }; }
+        const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it now, JSON only.`, 800);
+        const f = jsonExtract(raw) || { headline: "", primaryText: raw, cta: "Learn More" };
         ad = { id: "ad_" + (cur.ads.length + 1), at: new Date().toISOString(), platform, goal, fields: { meta: f } };
       }
       cur.ads.unshift(ad); store({ ...cur, ads: cur.ads.slice(0, 50) });

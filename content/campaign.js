@@ -118,3 +118,33 @@ window.CAMPAIGN.faq = [
   { q: "Is 2026 a good time to buy or sell in Sherman Oaks?", a: "Both buyers and sellers have opportunities in 2026. Inventory has improved for buyers, while prices remain steady for sellers. The right move depends on your home, timeline, and goals." },
   { q: "How do I get in touch with The Rich Group?", a: "Call us at (818) 632-2258 or use the contact form on our website." },
 ];
+
+// Service framing + punchlist — SEO managed by Steve's Dev & Data.
+window.CAMPAIGN.service = {
+  provider: "Steve's Dev & Data",
+  summary: "Your SEO & marketing is managed for you. We handle the content and the machine; you handle the few steps that need your logins. Check items off as they're done — progress shows below.",
+  // Delivered = Steve's Dev & Data has already done these (shown complete).
+  delivered: [
+    "Full SEO audit completed",
+    "Blog post #1 written & ready to publish",
+    "Page titles & meta descriptions written (5 key pages)",
+    "Homepage FAQ block written (AI-assistant ready)",
+    "Google Business Profile starter posts written",
+    "Client review-request messages written (text + email)",
+    "NAP fix sheet built (one official name/address/phone)",
+    "Daily auto-post agent running — fresh posts every 6 AM",
+    "Live keyword rank tracking set up",
+  ],
+  // To-do = needs Anita's logins. Checkable; progress tracked.
+  todo: [
+    { t: "Claim & verify the Google Business Profile", owner: "anita" },
+    { t: "Fix website footer click-to-call → (818) 632-2258", owner: "anita" },
+    { t: "Set Google address to Studio City + real hours", owner: "anita" },
+    { t: "Correct Yelp address to Studio City", owner: "anita" },
+    { t: "Verify Zillow / Realtor.com / Homes.com / FB / LinkedIn match NAP", owner: "anita" },
+    { t: "Publish blog post #1 in Luxury Presence", owner: "anita" },
+    { t: "Apply page titles & metas in Luxury Presence", owner: "anita" },
+    { t: "Add the FAQ block to the homepage", owner: "anita" },
+    { t: "Send Google review requests to recent happy clients", owner: "anita" },
+  ],
+};

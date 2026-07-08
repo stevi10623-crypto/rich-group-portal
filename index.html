@@ -270,6 +270,36 @@
         </section>
 
         <section class="page" id="seo">
+          <div class="section" style="margin-top:0;border:1px solid var(--teal);background:linear-gradient(100deg,#f0f9f7,#eef4fb)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <div class="mark" style="width:30px;height:30px;font-size:13px;border-radius:8px">SD</div>
+              <h2 style="margin:0">SEO &amp; Marketing — managed by <span id="svcProvider">Steve's Dev &amp; Data</span></h2>
+            </div>
+            <div class="desc" id="svcSummary" style="margin-bottom:14px"></div>
+            <div style="background:#e6ebf1;border-radius:20px;height:12px;overflow:hidden;margin-bottom:6px">
+              <div id="svcBar" style="height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--accent));transition:width .5s"></div>
+            </div>
+            <div class="muted" id="svcProgress" style="margin-bottom:16px"></div>
+            <div class="row">
+              <div class="col">
+                <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">✓ Delivered by Steve's Dev &amp; Data</div>
+                <div id="svcDelivered" style="font-size:13px;line-height:1.9;color:#46505e"></div>
+              </div>
+              <div class="col">
+                <div style="font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Your punchlist — check off as done</div>
+                <div id="svcTodo"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section" style="border:1px solid var(--accent)">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:200px"><h2 style="margin:0">Weekly result update</h2><div class="desc" style="margin:0" id="weekWhen"></div></div>
+              <button class="btn btn-approve" id="rescanBtn" style="padding:11px 18px">↻ Rescan for new results</button>
+            </div>
+            <div id="weekBody" style="margin-top:14px"></div>
+          </div>
+
           <div class="banner"><div class="bigdot"></div><div><b>Big finding:</b> <span class="muted" id="seoBigFinding"></span></div></div>
 
           <div class="section" style="margin-top:0">
@@ -701,6 +731,64 @@
         }).catch(function(){ bl.textContent="Error — retry"; bl.disabled=false; });
     }
   });
+  var RANKDATA={history:[]};
+  state.punch = state.punch || {};
+  function renderService(){
+    var sv=(C.service)||{delivered:[],todo:[]};
+    document.getElementById("svcProvider").textContent=sv.provider||"Steve's Dev & Data";
+    document.getElementById("svcSummary").textContent=sv.summary||"";
+    document.getElementById("svcDelivered").innerHTML=(sv.delivered||[]).map(function(d){
+      return '<div>✅ '+d+'</div>'; }).join("");
+    var todo=sv.todo||[];
+    document.getElementById("svcTodo").innerHTML=todo.map(function(t,i){
+      var done=!!state.punch["t"+i];
+      var badge=t.owner==="anita"?'<span class="pill" style="color:var(--accent);border-color:#cfe0f0">You</span>':'<span class="pill" style="color:var(--teal);border-color:#bfe6df">SD&D</span>';
+      return '<div class="qcard'+(done?" done":"")+'" style="padding:10px 14px;display:flex;align-items:center;gap:10px">'
+        +'<input type="checkbox" data-punch="t'+i+'" '+(done?"checked":"")+' style="width:17px;height:17px;accent-color:var(--teal);flex-shrink:0">'
+        +'<span style="flex:1;font-size:13px;color:#46505e'+(done?";text-decoration:line-through":"")+'">'+t.t+'</span>'+badge+'</div>';
+    }).join("");
+    var delN=(sv.delivered||[]).length;
+    var doneN=todo.filter(function(t,i){return state.punch["t"+i]}).length;
+    var total=delN+todo.length, complete=delN+doneN;
+    var pct=total?Math.round(complete/total*100):0;
+    document.getElementById("svcBar").style.width=pct+"%";
+    document.getElementById("svcProgress").textContent=complete+" of "+total+" complete ("+pct+"%) — "+delN+" done for you, "+doneN+"/"+todo.length+" of your steps done.";
+  }
+  document.getElementById("svcTodo") && document.getElementById("seo").addEventListener("change",function(e){
+    var cb=e.target.closest("input[data-punch]");
+    if(cb){ state.punch[cb.getAttribute("data-punch")]=cb.checked; save(); renderService(); }
+  });
+  function renderWeekly(){
+    var h=RANKDATA.history||[];
+    var el=document.getElementById("weekBody");
+    if(!RANKDATA.latest){ el.innerHTML='<div class="muted">No scan yet — tap “Rescan for new results”.</div>'; document.getElementById("weekWhen").textContent=""; return; }
+    document.getElementById("weekWhen").textContent="As of "+new Date(RANKDATA.latest.at).toLocaleDateString();
+    // find a snapshot ~7 days ago for comparison
+    var now=new Date(RANKDATA.latest.at).getTime();
+    var prev=null;
+    for(var i=h.length-1;i>=0;i--){ if(now-new Date(h[i].at).getTime()>=6*864e5){ prev=h[i]; break; } }
+    var prevMap={}; if(prev)prev.positions.forEach(function(p){prevMap[p.k]=p.p});
+    var rows=RANKDATA.latest.rows.map(function(r){
+      var was=prevMap[r.keyword], now2=r.position;
+      var move="", col="var(--grey)";
+      if(prev){
+        if(now2&&was){ if(now2<was){move="▲ up "+(was-now2);col="var(--green)"} else if(now2>was){move="▼ down "+(now2-was);col="var(--red)"} else {move="no change"} }
+        else if(now2&&!was){move="▲ now ranking!";col="var(--green)"}
+        else if(!now2&&was){move="▼ dropped out";col="var(--red)"}
+        else {move="—"}
+      } else move="baseline";
+      var pos=now2?('#'+now2):'not in top 10';
+      return '<div class="qcard" style="padding:9px 15px;display:flex;align-items:center;gap:10px">'
+        +'<span style="flex:1;font-size:13px">'+r.keyword+'</span>'
+        +'<span style="font-weight:700;color:'+(now2?"var(--green)":"var(--red)")+'">'+pos+'</span>'
+        +'<span style="font-size:11.5px;color:'+col+';min-width:90px;text-align:right">'+move+'</span></div>';
+    }).join("");
+    // punchlist momentum
+    var sv=C.service||{delivered:[],todo:[]};
+    var doneN=(sv.todo||[]).filter(function(t,i){return state.punch["t"+i]}).length;
+    el.innerHTML='<div class="muted" style="margin-bottom:8px">Keyword movement vs last week'+(prev?"":" (first scan — this is your baseline)")+':</div>'+rows
+      +'<div style="margin-top:12px;font-size:13px;color:#46505e">📋 Punchlist: <b>'+doneN+'/'+(sv.todo||[]).length+'</b> of your steps done · ✅ <b>'+(sv.delivered||[]).length+'</b> deliverables completed by Steve\'s Dev & Data.</div>';
+  }
   function renderRank(d){
     var latest=d.latest; if(!latest){ document.getElementById("rankTable").innerHTML='<div class="muted">No checks yet — hit the button.</div>'; return; }
     document.getElementById("rankWhen").textContent=" Last check: "+new Date(latest.at).toLocaleString();
@@ -711,7 +799,14 @@
         +'<span class="ttl" style="flex:1;font-size:13.5px">'+r.keyword+'</span>'+pos+'</div>';
     }).join("");
   }
-  fetch(API+"/api/rank").then(function(r){return r.json()}).then(renderRank).catch(function(){});
+  fetch(API+"/api/rank").then(function(r){return r.json()}).then(function(d){ RANKDATA=d; renderRank(d); renderWeekly(); }).catch(function(){});
+  document.getElementById("rescanBtn").addEventListener("click",function(){
+    var b=this; b.textContent="Scanning…"; b.disabled=true;
+    fetch(API+"/api/rank",{method:"POST"}).then(function(r){return r.json()})
+      .then(function(latest){ return fetch(API+"/api/rank").then(function(r){return r.json()}); })
+      .then(function(d){ RANKDATA=d; renderRank(d); renderWeekly(); b.textContent="↻ Rescan for new results"; b.disabled=false; })
+      .catch(function(){ b.textContent="↻ Rescan for new results"; b.disabled=false; });
+  });
   document.getElementById("rankBtn").addEventListener("click",function(){
     var b=this; b.textContent="Checking…"; b.disabled=true;
     fetch(API+"/api/rank",{method:"POST"}).then(function(r){return r.json()})
@@ -778,7 +873,7 @@
     if(e.key==="g"){ var b2=document.querySelector('[data-p="create"]'); if(b2)b2.click(); }
   });
 
-  renderSeo();
+  renderSeo(); renderService();
   renderCreate();
   renderQueue(); renderAddons(); loadServerDrafts();
 })();

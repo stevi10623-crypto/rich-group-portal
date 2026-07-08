@@ -10,19 +10,20 @@
   :root{--burg:#8f2129}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Georgia,"Times New Roman",serif;background:#211f1f;display:flex;justify-content:center;align-items:flex-start;min-height:100vh}
-  .card{background:#f6f2ec;width:100%;max-width:420px;display:flex;flex-direction:column}
-  .body{padding:20px 26px}
-  .top{color:#fff;padding:40px 28px 30px;text-align:center;position:relative}
-  .logo{max-height:38px;margin-bottom:12px;filter:brightness(0) invert(1);opacity:.95}
-  .photo{width:120px;height:120px;border-radius:50%;border:4px solid rgba(255,255,255,.85);object-fit:cover;margin:0 auto 14px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700}
-  .name{font-size:26px;letter-spacing:.03em}
-  .tl{font-size:13px;opacity:.92;margin-top:5px;line-height:1.5}
-  .company{margin-top:8px;font-size:12px;letter-spacing:.25em;text-transform:uppercase;opacity:.85}
-  .body{padding:24px 26px;flex:1}
-  .btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;margin-bottom:11px;background:#fff;border:1px solid #e6e0d8;border-radius:12px;text-decoration:none;color:#1c1a1a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;font-weight:600}
-  .btn:hover{transform:translateY(-1px)}
-  .btn .ic{width:22px;text-align:center;font-size:17px}
-  .save{color:#fff;justify-content:center}
+  .card{background:#f6f2ec;width:100%;max-width:420px;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .top{color:#fff;padding:34px 28px 26px;text-align:center;position:relative}
+  .top::after{content:"";position:absolute;left:26px;right:26px;bottom:0;height:1px;background:rgba(255,255,255,.25)}
+  .logo{max-height:36px;margin-bottom:12px;filter:brightness(0) invert(1);opacity:.95}
+  .photo{width:112px;height:112px;border-radius:50%;border:3px solid rgba(255,255,255,.9);object-fit:cover;margin:0 auto 14px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .name{font-size:25px;letter-spacing:.03em;font-weight:600}
+  .tl{font-size:12.5px;opacity:.92;margin-top:6px;line-height:1.55}
+  .company{margin-top:9px;font-size:11px;letter-spacing:.28em;text-transform:uppercase;opacity:.85}
+  .body{padding:22px 24px;flex:1}
+  .btn{display:flex;align-items:center;gap:13px;width:100%;padding:12px 15px;margin-bottom:10px;background:#fff;border:1px solid #eae3d9;border-radius:13px;text-decoration:none;color:#241f1c;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14.5px;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:.15s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.09)}
+  .btn .ic{width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#f4efe8;font-size:16px}
+  .save{color:#fff;justify-content:center;font-weight:700}
+  .save .ic{background:rgba(255,255,255,.18)}
   .socials{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
   .socials a{width:42px;height:42px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700;font-family:sans-serif}
   .foot{text-align:center;font-size:11px;color:#8a8378;padding:16px}

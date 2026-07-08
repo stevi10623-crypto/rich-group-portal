@@ -275,7 +275,7 @@
                 <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px" id="imgmode"></div>
                 <div class="muted" id="imgnote" style="margin-bottom:14px">Listing posts should use the real property photo — AI scenes are for market updates &amp; neighborhood posts.</div>
                 <input type="file" id="photoUpload" accept="image/*" style="display:none">
-                <button class="btn btn-approve" id="genBtn" style="width:100%;padding:12px">✦ Generate</button>
+                <button class="btn btn-approve" id="genBtn" style="width:100%;padding:12px">✦ Write my posts</button>
                 <div class="muted" id="genStatus" style="margin-top:9px"></div>
               </div>
               <div class="col">
@@ -290,7 +290,7 @@
 
         <section class="page" id="gallery">
           <div class="section" style="margin-top:0">
-            <h2>Photo Gallery</h2>
+            <h2>Your Photo Gallery</h2>
             <div class="desc">Upload listing photos and pull up any image you've made — headshots, post visuals, listing shots. Use them in your posts.</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
               <label class="btn btn-approve" style="padding:11px 18px;cursor:pointer">⬆ Upload listing images
@@ -424,7 +424,7 @@
         <section class="page" id="addons">
           <div class="section" style="margin-top:0">
             <h2>Add-on services</h2>
-            <div class="desc">Toggle services on to add them to this agent's plan. Priced separately.</div>
+            <div class="desc">Agencies typically charge <b>$500 to $2,000 a month</b> for these. Toggle one on and the Dev &amp; Data team sets it up for you, priced separately and always less than an agency. Nothing is charged until you approve a quote.</div>
             <div class="grid addons" id="addonGrid"></div>
           </div>
         </section>
@@ -470,8 +470,8 @@
             <h2>Generate an ad</h2>
             <div class="desc">AI writes a ready-to-paste ad for the platform you pick.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px" id="adPlat"></div>
-            <input id="adGoal" placeholder="Goal — e.g. get seller leads in Sherman Oaks" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft);margin-bottom:10px">
-            <button class="btn btn-approve" id="adGen" style="padding:11px 18px">✦ Write the ad</button>
+            <input id="adGoal" value="Get seller leads in Sherman Oaks and Studio City" placeholder="Goal" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft);margin-bottom:10px">
+            <button class="btn btn-approve" id="adGen" style="padding:11px 18px">✦ Write my ad</button>
             <div id="adOut" style="margin-top:14px"></div>
           </div>
         </section>
@@ -496,7 +496,7 @@
                 <div id="hsVb" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
                 <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Or use your own background <span class="muted" style="font-weight:400">(optional)</span></div>
                 <input type="file" id="hsBgFile" accept="image/*" style="margin-bottom:16px;font-size:12px">
-                <button class="btn btn-approve" id="hsGen" style="width:100%;padding:12px">✦ Generate headshot</button>
+                <button class="btn btn-approve" id="hsGen" style="width:100%;padding:12px">✦ Make my headshot</button>
                 <div class="muted" id="hsMsg" style="margin-top:9px"></div>
               </div>
               <div class="col">
@@ -509,7 +509,7 @@
 
         <section class="page" id="card">
           <div class="section" style="margin-top:0">
-            <h2>Digital Business Cards</h2>
+            <h2>Your Digital Card</h2>
             <div class="desc">Create and edit shareable cards — works on any phone, no app. Add as many as you need.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
               <select id="cardSel" style="padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)"></select>
@@ -1221,10 +1221,10 @@
   document.getElementById("adOut").addEventListener("click",function(e){ var b=e.target.closest("button[data-copy]"); if(!b)return; navigator.clipboard.writeText(decodeURIComponent(b.getAttribute("data-copy"))); b.textContent="Copied ✓"; setTimeout(function(){b.textContent="Copy";},1200); });
   document.getElementById("adGen").addEventListener("click",function(){ var b=this;b.textContent="Writing…";b.disabled=true;
     fetch(API+"/api/ads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"generate-ad",platform:adPlat,goal:document.getElementById("adGoal").value})})
-      .then(function(r){return r.json()}).then(function(d){ b.textContent="✦ Write the ad"; b.disabled=false;
+      .then(function(r){return r.json()}).then(function(d){ b.textContent="✦ Write my ad"; b.disabled=false;
         if(d.ok){ document.getElementById("adOut").innerHTML=renderAd(d.ad); }
         else document.getElementById("adOut").innerHTML='<div class="muted">'+(d.error||"try again")+'</div>';
-      }).catch(function(){ b.textContent="✦ Write the ad"; b.disabled=false; }); });
+      }).catch(function(){ b.textContent="✦ Write my ad"; b.disabled=false; }); });
 
   // ---- Headshot Studio ----
   var hs={src:null,bg:"office",at:"blazer",cl:"navy",hr:"asis",vb:"classic",customBg:null};
@@ -1269,10 +1269,10 @@
     var b=document.getElementById("hsGen"); b.textContent="Generating… (~15s)"; b.disabled=true; document.getElementById("hsMsg").textContent="";
     document.getElementById("hsOut").innerHTML='<div class="muted" style="padding:30px 0">Working…</div>';
     fetch(API+"/api/headshot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dataUrl:hs.src,background:hs.bg,attire:hs.at,color:hs.cl,hair:hs.hr,vibe:hs.vb,customBg:hs.customBg})})
-      .then(function(r){return r.json()}).then(function(d){ b.textContent="✦ Generate headshot"; b.disabled=false;
+      .then(function(r){return r.json()}).then(function(d){ b.textContent="✦ Make my headshot"; b.disabled=false;
         if(d.ok){ showHS(d.dataUrl); }
         else { document.getElementById("hsOut").innerHTML=''; document.getElementById("hsMsg").textContent=d.note||d.error||"Try again"; }
-      }).catch(function(){ b.textContent="✦ Generate headshot"; b.disabled=false; document.getElementById("hsMsg").textContent="Error — try again"; });
+      }).catch(function(){ b.textContent="✦ Make my headshot"; b.disabled=false; document.getElementById("hsMsg").textContent="Error — try again"; });
   }
   document.getElementById("hsGen").addEventListener("click",runHeadshot);
 
@@ -1375,7 +1375,7 @@
   document.getElementById("social").addEventListener("click",function(e){
     var c=e.target.closest("[data-conn]");
     if(c){ var p=c.getAttribute("data-conn"); fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",platform:p,on:!(socSettings.connected||{})[p]})}).then(function(r){return r.json()}).then(function(d){renderSocial({settings:d.settings,scheduled:socSettings._sc||[]});loadSocial();}); return; }
-    if(e.target.id==="autoSw"){ socSettings.autoPost=!socSettings.autoPost; document.getElementById("autoSw").className="sw"+(socSettings.autoPost?" on":""); document.getElementById("autoLbl").textContent="Auto-post is "+(socSettings.autoPost?"ON":"OFF"); return; }
+    if(e.target.id==="autoSw"){ var off=socSettings.autoPost; if(off && !confirm("Turn auto-post OFF? Your approved posts will stop going out on their own and you will have to post each one by hand. Nothing already scheduled is deleted.")) return; socSettings.autoPost=!socSettings.autoPost; document.getElementById("autoSw").className="sw"+(socSettings.autoPost?" on":""); document.getElementById("autoLbl").textContent="Auto-post is "+(socSettings.autoPost?"ON":"OFF"); return; }
     var sp=e.target.closest("[data-splat]");
     if(sp){ var pp=sp.getAttribute("data-splat"); var arr=socSettings.platforms||[]; var i=arr.indexOf(pp); if(i>-1)arr.splice(i,1); else arr.push(pp); socSettings.platforms=arr; sp.className="btn "+(i>-1?"btn-edit":"btn-approve"); return; }
   });

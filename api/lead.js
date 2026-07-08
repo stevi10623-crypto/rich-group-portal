@@ -20,6 +20,11 @@ module.exports = async (req, res) => {
       }).length;
       return res.status(200).json({ leads, countThisMonth });
     }
+    if (req.method === "POST" && (req.body || {}).action === "status") {
+      const { id, status } = req.body;
+      store(load().map((l) => (l.id === id ? { ...l, status } : l)));
+      return res.status(200).json({ ok: true });
+    }
     if (req.method === "POST") {
       const { name, phone, address, source } = req.body || {};
       if (!name || !phone) return res.status(400).json({ error: "name and phone required" });

@@ -161,6 +161,7 @@
         <button data-p="queue"><span class="ic">✎</span> Approval Queue <span class="badge" id="qbadge">4</span></button>
         <button data-p="seo"><span class="ic">⌖</span> SEO Plan</button>
         <button data-p="reports"><span class="ic">▦</span> Reports</button>
+        <button data-p="leads"><span class="ic">◎</span> Leads <span class="badge" id="leadsBadge" style="display:none">0</span></button>
         <button data-p="content"><span class="ic">▤</span> Content</button>
         <button data-p="reviews"><span class="ic">★</span> Reviews</button>
         <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
@@ -406,6 +407,15 @@
           </div>
         </section>
 
+        <section class="page" id="leads">
+          <div class="section" style="margin-top:0">
+            <h2>Leads — captured from your funnel</h2>
+            <div class="desc">Every lead your landing page &amp; ads bring in. Work them top to bottom; mark each as you go.</div>
+            <div class="grid kpis" id="leadKpis" style="margin-bottom:16px"></div>
+            <div id="leadList"></div>
+          </div>
+        </section>
+
         <section class="page" id="reports">
           <div class="section" style="margin-top:0">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -504,9 +514,11 @@
 
         <section class="page" id="inbox">
           <div class="section" style="margin-top:0">
-            <h2>Requests — for Steve's Dev &amp; Data</h2>
-            <div class="desc">Everything Anita asks for (add-ons, changes, new tools) lands here to be actioned. Mark items as you complete them.</div>
-            <div id="inboxList"></div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:200px"><h2 style="margin:0">Requests</h2><div class="desc" style="margin:0">Ask Steve's Dev &amp; Data for anything — a new tool, a change, a digital card, headshots. Track status here.</div></div>
+              <button class="btn btn-approve" id="inboxAdd" style="padding:11px 20px">+ New request</button>
+            </div>
+            <div id="inboxList" style="margin-top:16px"></div>
           </div>
         </section>
 
@@ -576,7 +588,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",seo:"4",content:"5",reviews:"6",addons:"7"};
@@ -1041,7 +1053,9 @@
 
   // ---- Request a change ----
   var reqM=document.getElementById("reqModal");
-  document.getElementById("openReq").addEventListener("click",function(){ reqM.classList.add("show"); document.getElementById("reqStatus").textContent=""; });
+  function openRequest(){ reqM.classList.add("show"); document.getElementById("reqStatus").textContent=""; }
+  document.getElementById("openReq").addEventListener("click",openRequest);
+  var inboxAddBtn=document.getElementById("inboxAdd"); if(inboxAddBtn) inboxAddBtn.addEventListener("click",openRequest);
   document.getElementById("reqCancel").addEventListener("click",function(){ reqM.classList.remove("show"); });
   reqM.addEventListener("click",function(e){ if(e.target===reqM) reqM.classList.remove("show"); });
   document.getElementById("reqSend").addEventListener("click",function(){
@@ -1055,6 +1069,7 @@
       .then(function(d){
         if(d.ok){ st.style.color="var(--green)"; st.textContent="✅ Sent! Steve's Dev & Data will take it from here.";
           document.getElementById("reqMsg").value="";
+          if(typeof renderInbox==="function") renderInbox();
           setTimeout(function(){ reqM.classList.remove("show"); st.style.color=""; },1600);
         } else { st.textContent="Hmm — "+(d.error||"try again"); }
       })
@@ -1206,6 +1221,35 @@
       .then(function(){ renderInbox(); });
   });
   renderInbox();
+
+  // ---- Leads (CRM) ----
+  var LEAD_STATES=["new","contacted","qualified","routed","closed"];
+  function renderLeads(){
+    fetch(API+"/api/lead").then(function(r){return r.json()}).then(function(d){
+      var leads=d.leads||[]; var open=leads.filter(function(l){return (l.status||"new")==="new"}).length;
+      var bd=document.getElementById("leadsBadge"); if(bd){ bd.textContent=open; bd.style.display=open?"inline-block":"none"; }
+      var byStatus={}; leads.forEach(function(l){var st=l.status||"new";byStatus[st]=(byStatus[st]||0)+1;});
+      document.getElementById("leadKpis").innerHTML=
+        '<div class="kpi"><div class="label">This month</div><div class="val">'+(d.countThisMonth||0)+'</div><div class="chg flat">'+leads.length+' all-time</div></div>'
+        +'<div class="kpi"><div class="label">New / unworked</div><div class="val">'+(byStatus.new||0)+'</div><div class="chg flat">need follow-up</div></div>'
+        +'<div class="kpi"><div class="label">Routed</div><div class="val">'+(byStatus.routed||0)+'</div><div class="chg up">monetized</div></div>'
+        +'<div class="kpi"><div class="label">Closed</div><div class="val">'+(byStatus.closed||0)+'</div><div class="chg up">won</div></div>';
+      var el=document.getElementById("leadList");
+      if(!leads.length){ el.innerHTML='<div class="muted">No leads yet — push the landing page (/lp) in posts and ads.</div>'; return; }
+      el.innerHTML=leads.map(function(l){
+        var st=l.status||"new";
+        var opts=LEAD_STATES.map(function(x){return '<option value="'+x+'"'+(x===st?" selected":"")+'>'+x+'</option>'}).join("");
+        return '<div class="qcard" style="padding:12px 15px"><div class="qhead"><span class="tag t-gbp">'+esc(l.source||"lead")+'</span><span class="ttl">'+esc(l.name)+'</span><span class="when">'+new Date(l.at).toLocaleDateString()+'</span></div>'
+          +'<div style="font-size:13px;color:#46505e;margin-bottom:8px">📞 <a href="tel:'+esc(l.phone)+'">'+esc(l.phone)+'</a>'+(l.address?' · 🏠 '+esc(l.address):'')+'</div>'
+          +'<div class="qactions"><select data-lead="'+l.id+'" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px;text-transform:capitalize">'+opts+'</select></div></div>';
+      }).join("");
+    }).catch(function(){});
+  }
+  document.getElementById("leads").addEventListener("change",function(e){
+    var sel=e.target.closest("select[data-lead]"); if(!sel)return;
+    fetch(API+"/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"status",id:sel.getAttribute("data-lead"),status:sel.value})}).then(function(){ renderLeads(); });
+  });
+  renderLeads();
 
   // ---- Reports ----
   var rpPeriod="week";

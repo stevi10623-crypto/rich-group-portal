@@ -642,7 +642,7 @@
 
   // ---- state ----
   var KEY="sdd_portal_v2";
-  var state=JSON.parse(localStorage.getItem(KEY)||"{}");
+  var state; try{ state=JSON.parse(localStorage.getItem(KEY)||"{}"); }catch(e){ state={}; }
   state.queue=state.queue||{};
   state.items=state.items||[];   // user-generated queue items (from Create Post / review replies)
   state.addons=state.addons||{funnels:false,ads:false,podcast:false,avatar:false,assistant:false,reactivation:false};
@@ -667,12 +667,13 @@
   })();
   document.getElementById("nav").addEventListener("click",function(e){
     var b=e.target.closest("button"); if(!b)return;
+    var pg=b.getAttribute("data-p"); if(!pg) return; // ignore non-page buttons (e.g. More tools toggle)
+    var pageEl=document.getElementById(pg); if(!pageEl) return;
     document.querySelectorAll(".nav button").forEach(function(x){x.classList.remove("active")});
     b.classList.add("active");
-    var pg=b.getAttribute("data-p");
     document.querySelectorAll(".page").forEach(function(x){x.classList.remove("active")});
-    document.getElementById(pg).classList.add("active");
-    document.getElementById("pageTitle").textContent=titles[pg];
+    pageEl.classList.add("active");
+    document.getElementById("pageTitle").textContent=titles[pg]||"";
   });
 
   // ---- queue (real campaign content + server-side agent drafts) ----
@@ -898,7 +899,8 @@
         body:JSON.stringify({kind:p,brief:brief})})
         .then(function(r){return r.json()})
         .then(function(d){ sel.gen.captions[p]=d.text||("[error: "+d.error+"]");
-          pv.innerHTML+='<div class="qcard" style="margin-bottom:10px"><div class="qhead"><span class="tag t-social">'+p+'</span></div><div class="qbody" style="white-space:pre-wrap">'+esc(sel.gen.captions[p])+'</div></div>'; });
+          pv.innerHTML+='<div class="qcard" style="margin-bottom:10px"><div class="qhead"><span class="tag t-social">'+p+'</span></div><div class="qbody" style="white-space:pre-wrap">'+esc(sel.gen.captions[p])+'</div></div>'; })
+        .catch(function(){ sel.gen.captions[p]="[couldn't write this one — try again]"; });
     }));
 
     var img=Promise.resolve();
@@ -919,12 +921,16 @@
                 else if(x.status==="error"){ clearInterval(iv); document.getElementById("pvImage").textContent="Image failed — "+(x.error||""); resolve(); }
               }).catch(function(){});
             },2500);
+            setTimeout(function(){ clearInterval(iv); document.getElementById("pvImage").textContent="Image took too long — you can still send the text, or try again."; resolve(); },90000);
           });
         })
         .catch(function(e){ document.getElementById("pvImage").textContent="Image failed: "+e.message; });
     }
     Promise.all([caps,img]).then(function(){
       busy=false; st.textContent="Done. Review the preview, then send it to the Approval Queue.";
+      document.getElementById("queueBtn").style.display="block";
+    }).catch(function(){
+      busy=false; st.textContent="Something went wrong — please try again.";
       document.getElementById("queueBtn").style.display="block";
     });
   });
@@ -1316,7 +1322,7 @@
       +fld("Company","cf_company",c.company)
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Brand color</label><input type="color" id="cf_color" value="'+(c.brandColor||"#8f2129")+'" style="width:60px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--soft)">'
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Font</label><select id="cf_font" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
-      +['serif|Classic Serif','playfair|Playfair (elegant)','cinzel|Cinzel (luxury)','montserrat|Montserrat (modern)','sans|Clean Sans'].map(function(o){var p=o.split("|");return '<option value="'+p[0]+'"'+((c.font||"serif")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select'
+      +['serif|Classic Serif','playfair|Playfair (elegant)','cinzel|Cinzel (luxury)','montserrat|Montserrat (modern)','sans|Clean Sans'].map(function(o){var p=o.split("|");return '<option value="'+p[0]+'"'+((c.font||"serif")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select>'
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Font size</label><select id="cf_fontscale" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
       +[['','Normal'],['92%','Small'],['108%','Large'],['118%','Extra large']].map(function(p){return '<option value="'+p[0]+'"'+((c.fontScale||"")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select>'
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Header style</label><select id="cf_header" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
@@ -1325,8 +1331,10 @@
       +fld("Email","cf_email",c.email)+fld("Website","cf_website",c.website)
       +fld("Address","cf_address",c.address)+fld("Brokerage / license line","cf_broker",c.brokerageLine)
       +'<div style="margin-top:8px;font-size:11px;font-weight:600;color:var(--grey)">Photo &amp; logo</div>'
-      +'<div style="display:flex;gap:14px;margin-top:5px"><label style="font-size:12px">Photo <input type="file" id="cf_photo" accept="image/*" style="font-size:11px"></label>'
+      +'<div style="display:flex;gap:14px;margin-top:5px;flex-wrap:wrap;align-items:center"><label style="font-size:12px">Photo <input type="file" id="cf_photo" accept="image/*" style="font-size:11px"></label>'
+      +'<button type="button" class="btn btn-edit" id="cf_photoGal" style="padding:4px 10px;font-size:11px">Pick from Gallery</button>'
       +'<label style="font-size:12px">Logo <input type="file" id="cf_logo" accept="image/*" style="font-size:11px"></label></div>'
+      +'<div id="cf_galpick" style="display:none;gap:6px;flex-wrap:wrap;margin-top:8px;max-height:120px;overflow:auto"></div>'
       +'<div style="margin-top:10px;font-size:11px;font-weight:600;color:var(--grey)">Social links</div>'
       +SOCS.map(function(k){return fld(k.charAt(0).toUpperCase()+k.slice(1),"cf_soc_"+k,soc[k]);}).join("");
     c._photo=c.photoUrl||""; c._logo=c.logoUrl||"";
@@ -1361,7 +1369,6 @@
     }).catch(function(){});
   }
   function refreshPreview(slug){ document.getElementById("cardFrame").src="/c?slug="+encodeURIComponent(slug)+"&t="+Date.now(); document.getElementById("cardOpen").href="/c?slug="+encodeURIComponent(slug); }
-  document.getElementById("cardSel").addEventListener("change",function(){ var c=cards.find(function(x){return x.slug===this.value}); if(c){renderCardForm(c);refreshPreview(c.slug);} }.bind(document.getElementById("cardSel")));
   document.getElementById("cardSel").addEventListener("change",function(e){ var c=cards.find(function(x){return x.slug===e.target.value}); if(c){renderCardForm(c);refreshPreview(c.slug);} });
   document.getElementById("cardNew").addEventListener("click",function(){ renderCardForm({name:"",titleLines:[],company:"",brandColor:"#8f2129",phones:[],socials:[]}); });
   document.getElementById("cardSave").addEventListener("click",function(){
@@ -1406,13 +1413,15 @@
   document.getElementById("social").addEventListener("click",function(e){
     var c=e.target.closest("[data-conn]");
     if(c){ var p=c.getAttribute("data-conn"); fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",platform:p,on:!(socSettings.connected||{})[p]})}).then(function(r){return r.json()}).then(function(d){renderSocial({settings:d.settings,scheduled:socSettings._sc||[]});loadSocial();}); return; }
-    if(e.target.id==="autoSw"){ var off=socSettings.autoPost; if(off && !confirm("Turn auto-post OFF? Your approved posts will stop going out on their own and you will have to post each one by hand. Nothing already scheduled is deleted.")) return; socSettings.autoPost=!socSettings.autoPost; document.getElementById("autoSw").className="sw"+(socSettings.autoPost?" on":""); document.getElementById("autoLbl").textContent="Auto-post is "+(socSettings.autoPost?"ON":"OFF"); return; }
+    if(e.target.id==="autoSw"){ var off=socSettings.autoPost; if(off && !confirm("Turn auto-post OFF? Your approved posts will stop going out on their own and you will have to post each one by hand. Nothing already scheduled is deleted.")) return; socSettings.autoPost=!socSettings.autoPost; document.getElementById("autoSw").className="sw"+(socSettings.autoPost?" on":""); document.getElementById("autoLbl").textContent="Auto-post is "+(socSettings.autoPost?"ON":"OFF"); saveSocial(); return; }
     var sp=e.target.closest("[data-splat]");
-    if(sp){ var pp=sp.getAttribute("data-splat"); var arr=socSettings.platforms||[]; var i=arr.indexOf(pp); if(i>-1)arr.splice(i,1); else arr.push(pp); socSettings.platforms=arr; sp.className="btn "+(i>-1?"btn-edit":"btn-approve"); return; }
+    if(sp){ var pp=sp.getAttribute("data-splat"); var arr=socSettings.platforms||[]; var i=arr.indexOf(pp); if(i>-1)arr.splice(i,1); else arr.push(pp); socSettings.platforms=arr; sp.className="btn "+(i>-1?"btn-edit":"btn-approve"); saveSocial(); return; }
   });
-  document.getElementById("socSave").addEventListener("click",function(){
-    fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"settings",settings:{autoPost:socSettings.autoPost,perWeek:Number(document.getElementById("socPerWeek").value)||3,timeOfDay:document.getElementById("socTime").value,platforms:socSettings.platforms}})})
-      .then(function(){ document.getElementById("socMsg").textContent="✅ Saved"; setTimeout(function(){document.getElementById("socMsg").textContent="";},1500); loadSocial(); });
+  function saveSocial(reload){
+    return fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"settings",settings:{autoPost:socSettings.autoPost,perWeek:Number(document.getElementById("socPerWeek").value)||3,timeOfDay:document.getElementById("socTime").value,platforms:socSettings.platforms}})})
+      .then(function(){ var m=document.getElementById("socMsg"); if(m){ m.textContent="✅ Saved"; setTimeout(function(){m.textContent="";},1500);} if(reload)loadSocial(); }).catch(function(){});
+  }
+  document.getElementById("socSave").addEventListener("click",function(){ saveSocial(true);
   });
   loadSocial();
 

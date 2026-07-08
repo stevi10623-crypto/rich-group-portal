@@ -19,10 +19,10 @@ module.exports = async (req, res) => {
     }
     if (req.method === "POST") {
       const { dataUrl, kind, title } = req.body || {};
-      const mm = String(dataUrl || "").match(/^data:image\/([a-zA-Z0-9.+-]+);base64,(.+)$/);
-      if (!mm) return res.status(400).json({ error: "image data required" });
+      const mm = String(dataUrl || "").match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.+)$/i);
+      if (!mm) return res.status(400).json({ error: "only PNG, JPG, WEBP or GIF images are allowed" });
       const ext = mm[1] === "jpeg" ? "jpg" : mm[1];
-      const id = "img_" + Date.now() + "_" + Math.floor((meta().length + 1));
+      const id = "img_" + Date.now() + "_" + Math.floor(Math.random()*1e6);
       fs.mkdirSync(DIR, { recursive: true });
       fs.writeFileSync(path.join(DIR, `${id}.${ext}`), Buffer.from(mm[2], "base64"));
       const list = meta();

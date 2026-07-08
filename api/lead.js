@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
     if (req.method === "POST") {
       const { name, phone, address, source } = req.body || {};
       if (!name || !phone) return res.status(400).json({ error: "name and phone required" });
-      const lead = { id: "lead_" + load().length, at: new Date().toISOString(), name, phone, address: address || "", source: source || "landing-page", status: "new" };
+      const lead = { id: "lead_" + Date.now() + "_" + Math.floor(Math.random()*1e6), at: new Date().toISOString(), name, phone, address: address || "", source: source || "landing-page", status: "new" };
       const leads = load(); leads.unshift(lead); store(leads.slice(0, 2000));
       if (WEBHOOK) fetch(WEBHOOK, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: `🔔 New lead: ${name} · ${phone} · ${address || ""}` }), signal: AbortSignal.timeout(5000) }).catch(() => {});
       return res.status(200).json({ ok: true });

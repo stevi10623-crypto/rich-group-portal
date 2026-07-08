@@ -42,6 +42,7 @@ async function ollama(messages, maxTokens) {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${OLLAMA_KEY}` },
         body: JSON.stringify({ model: OLLAMA_MODEL, messages, max_tokens: maxTokens || 600, temperature: 0.8 }),
+        signal: AbortSignal.timeout(90000),
       });
       if (!res.ok) { lastErr = `Ollama ${res.status}: ${(await res.text()).slice(0, 180)}`; continue; }
       const text = (await res.json())?.choices?.[0]?.message?.content?.trim();

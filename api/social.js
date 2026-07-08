@@ -26,11 +26,14 @@ function load() { try { return { ...DEFAULT, ...JSON.parse(fs.readFileSync(FILE,
 function store(o) { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(o, null, 2)); }
 
 // naive next-slot picker: spread perWeek posts across the week at timeOfDay
-function nextSlot(s, existingCount) {
+function nextSlot(s, scheduled) {
   const [h, m] = (s.timeOfDay || "09:00").split(":").map(Number);
   const gapDays = Math.max(1, Math.round(7 / Math.max(1, s.perWeek)));
+  // count only FUTURE items so the schedule never drifts unboundedly
+  const now = Date.now();
+  const futureCount = (scheduled || []).filter((x) => new Date(x.at).getTime() > now).length;
   const d = new Date();
-  d.setDate(d.getDate() + gapDays * (existingCount + 1));
+  d.setDate(d.getDate() + gapDays * (futureCount + 1));
   d.setHours(h || 9, m || 0, 0, 0);
   return d.toISOString();
 }
@@ -44,7 +47,7 @@ module.exports = async (req, res) => {
     if (b.action === "settings") { cur.settings = { ...cur.settings, ...b.settings }; store(cur); return res.status(200).json({ ok: true, settings: cur.settings }); }
     if (b.action === "connect") { cur.settings.connected[b.platform] = !!b.on; store(cur); return res.status(200).json({ ok: true, settings: cur.settings }); }
     if (b.action === "schedule") {
-      const when = nextSlot(cur.settings, cur.scheduled.length);
+      const when = nextSlot(cur.settings, cur.scheduled);
       const item = { id: "sch_" + Date.now(), at: when, platforms: cur.settings.platforms, body: (b.post || {}).body || "", status: "scheduled" };
       cur.scheduled.unshift(item); store(cur);
       // best-effort immediate hand-off to Postiz if reachable

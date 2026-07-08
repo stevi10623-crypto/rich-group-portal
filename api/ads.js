@@ -86,15 +86,22 @@ module.exports = async (req, res) => {
       const human = "Sound like a real person, NOT AI — no clichés (nestled, boasts, unparalleled, discover, elevate), no markdown, no asterisks.";
       let sys, ad;
       if (platform === "google") {
-        sys = `You write Google Search ads for a real-estate agent. ${BRAND} ${human} Return STRICT JSON only: {"headlines":["h1","h2","h3"],"descriptions":["d1","d2"]}. Headlines must be <=30 characters each, descriptions <=90 characters each. No fake statistics.`;
-        const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it now, JSON only.`, 800);
-        const f = jsonExtract(raw) || { headlines: [], descriptions: [] };
-        ad = { id: "ad_" + (cur.ads.length + 1), at: new Date().toISOString(), platform, goal, fields: { google: f } };
+        // Plain-text lines parse far more reliably than JSON on gpt-oss.
+        // Keep this prompt SHORT — gpt-oss returns empty content when over-constrained
+        // (char limits + "no markdown" triggered it). Loose guidance + format only.
+        sys = `You write Google Search ads for ${BRAND} Give 3 short punchy headlines and 2 short descriptions. Sound like a real person, no fake numbers. Output exactly this and nothing else:\nH1: <headline>\nH2: <headline>\nH3: <headline>\nD1: <description>\nD2: <description>`;
+        const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it.`, 600);
+        const grab = (re) => (raw.match(re) || [])[1]?.trim() || "";
+        const f = {
+          headlines: [grab(/H1:\s*(.+)/i), grab(/H2:\s*(.+)/i), grab(/H3:\s*(.+)/i)].filter(Boolean),
+          descriptions: [grab(/D1:\s*(.+)/i), grab(/D2:\s*(.+)/i)].filter(Boolean),
+        };
+        ad = { id: "ad_" + Date.now(), at: new Date().toISOString(), platform, goal, fields: { google: f } };
       } else {
         sys = `You write ${platform} lead ads for a real-estate agent. ${BRAND} ${human} Return STRICT JSON only: {"headline":"short headline (<=40 chars)","primaryText":"2-3 warm human sentences","description":"one short line","cta":"one of: Learn More, Get Quote, Sign Up, Contact Us","hashtags":"3-5 hashtags or empty"}. No fake statistics.`;
         const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it now, JSON only.`, 800);
         const f = jsonExtract(raw) || { headline: "", primaryText: raw, cta: "Learn More" };
-        ad = { id: "ad_" + (cur.ads.length + 1), at: new Date().toISOString(), platform, goal, fields: { meta: f } };
+        ad = { id: "ad_" + Date.now(), at: new Date().toISOString(), platform, goal, fields: { meta: f } };
       }
       cur.ads.unshift(ad); store({ ...cur, ads: cur.ads.slice(0, 50) });
       return res.status(200).json({ ok: true, ad });

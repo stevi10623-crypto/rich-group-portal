@@ -6,28 +6,28 @@
 <title>Steve's Dev & Data — Agent Growth Portal</title>
 <style>
   :root{
-    --navy:#1f3a5f; --navy2:#16293f; --accent:#2e75b6; --teal:#2bb3a3;
-    --green:#2e7d32; --amber:#8a6d00; --red:#b3261e; --grey:#5b6675;
-    --bg:#eef1f5; --card:#ffffff; --line:#e1e6ec; --soft:#f5f8fb;
-    color-scheme:light;
+    --navy:#141b26; --navy2:#0c121b; --accent:#3d86c9; --teal:#2bb3a3;
+    --green:#43b25e; --amber:#d0a43a; --red:#e5645c; --grey:#8f9cad;
+    --bg:#0e131b; --card:#1a2230; --line:#2b3543; --soft:#131a24; --text:#e6ecf3;
+    color-scheme:dark;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#1d2733}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
   /* ===== LOGIN ===== */
   #login{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
     background:radial-gradient(1200px 600px at 70% -10%,#26456b,#16293f);}
-  .lcard{width:380px;max-width:92vw;background:#fff;border-radius:18px;padding:34px 32px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+  .lcard{width:380px;max-width:92vw;background:var(--card);border-radius:18px;padding:34px 32px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
   .logo{display:flex;align-items:center;gap:11px;margin-bottom:6px}
   .mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--teal),var(--accent));color:#fff;
     display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;letter-spacing:-.5px}
-  .logo .ln{font-weight:800;font-size:16px;color:var(--navy)}
+  .logo .ln{font-weight:800;font-size:16px;color:var(--text)}
   .logo .ls{font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:2px}
-  .lcard h2{font-size:19px;color:var(--navy);margin:18px 0 4px}
+  .lcard h2{font-size:19px;color:var(--text);margin:18px 0 4px}
   .lcard .sub{font-size:13px;color:var(--grey);margin-bottom:20px}
   .field{margin-bottom:13px}
   .field label{display:block;font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px}
   .field input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft)}
-  .field input:focus{outline:none;border-color:var(--accent);background:#fff}
+  .field input:focus{outline:none;border-color:var(--accent);background:var(--card)}
   .lbtn{width:100%;margin-top:8px;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px;font-size:14.5px;font-weight:700;cursor:pointer;transition:.15s}
   .lbtn:hover{filter:brightness(1.08)}
   .lhint{margin-top:14px;font-size:11.5px;color:#9aa6b4;text-align:center}
@@ -49,10 +49,10 @@
   .nav .badge{margin-left:auto;background:var(--teal);color:#04332e;font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px}
   .sidefoot{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#8fa6c2}
   .main{flex:1;min-width:0;display:flex;flex-direction:column}
-  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;gap:16px}
-  .topbar h1{font-size:18px;font-weight:700;color:var(--navy)}
+  .topbar{background:var(--card);border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;gap:16px}
+  .topbar h1{font-size:18px;font-weight:700;color:var(--text)}
   .switcher{margin-left:auto;display:flex;align-items:center;gap:10px}
-  .switcher select{padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft);color:#1d2733;font-weight:600}
+  .switcher select{padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft);color:var(--text);font-weight:600}
   .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer}
   .content{padding:24px 26px;overflow:auto}
   .page{display:none}
@@ -62,11 +62,11 @@
   .kpis{grid-template-columns:repeat(4,1fr)}
   .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
   .kpi .label{font-size:12px;color:var(--grey);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
-  .kpi .val{font-size:28px;font-weight:800;color:var(--navy);margin:6px 0 2px}
+  .kpi .val{font-size:28px;font-weight:800;color:var(--text);margin:6px 0 2px}
   .kpi .chg{font-size:12px;font-weight:600}
   .chg.up{color:var(--green)} .chg.flat{color:var(--amber)} .chg.down{color:var(--red)}
   .section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:18px}
-  .section h2{font-size:15px;color:var(--navy);margin-bottom:4px}
+  .section h2{font-size:15px;color:var(--text);margin-bottom:4px}
   .section .desc{font-size:13px;color:var(--grey);margin-bottom:16px}
   .row{display:flex;gap:18px;flex-wrap:wrap}
   .col{flex:1;min-width:280px}
@@ -74,21 +74,21 @@
   .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px}
   .bar .b{width:60%;background:linear-gradient(180deg,var(--accent),var(--teal));border-radius:6px 6px 0 0;min-height:4px}
   .bar .bl{font-size:11px;color:var(--grey)}
-  .bar .bv{font-size:11px;font-weight:700;color:var(--navy)}
-  .qcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;background:#fff}
+  .bar .bv{font-size:11px;font-weight:700;color:var(--text)}
+  .qcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;background:var(--card)}
   .qcard.done{opacity:.55}
   .qhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
   .t-blog{background:#e7f0fb;color:var(--accent)} .t-gbp{background:#e7f7f0;color:var(--green)}
   .t-social{background:#f3e9fb;color:#7a2fb0} .t-review{background:#fdf0e3;color:var(--amber)}
-  .qhead .ttl{font-weight:700;font-size:14.5px;color:#1d2733}
+  .qhead .ttl{font-weight:700;font-size:14.5px;color:var(--text)}
   .qhead .when{margin-left:auto;font-size:12px;color:var(--grey)}
-  .qbody{font-size:13px;color:#46505e;line-height:1.55;background:var(--soft);border-radius:9px;padding:11px 13px;margin-bottom:12px}
+  .qbody{font-size:13px;color:#b3bdc9;line-height:1.55;background:var(--soft);border-radius:9px;padding:11px 13px;margin-bottom:12px}
   .qactions{display:flex;gap:9px;align-items:center}
   .btn{border:0;border-radius:9px;padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
   .btn-approve{background:var(--green);color:#fff} .btn-approve:hover{filter:brightness(1.08)}
-  .btn-edit{background:var(--soft);color:#1d2733;border:1px solid var(--line)}
-  .btn-reject{background:#fff;color:var(--red);border:1px solid #f1c9c6}
+  .btn-edit{background:var(--soft);color:var(--text);border:1px solid var(--line)}
+  .btn-reject{background:var(--card);color:var(--red);border:1px solid #f1c9c6}
   .status-pill{margin-left:auto;font-size:12px;font-weight:700}
   .sp-sched{color:var(--green)} .sp-rej{color:var(--red)}
   .rev{border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:11px}
@@ -96,27 +96,27 @@
   .rev .name{font-weight:700;font-size:13.5px}
   .stars{color:#f2a600;font-size:13px}
   .rev .src{margin-left:auto;font-size:11px;color:var(--grey);background:var(--soft);padding:2px 8px;border-radius:10px}
-  .rev .txt{font-size:13px;color:#46505e;line-height:1.5}
+  .rev .txt{font-size:13px;color:#b3bdc9;line-height:1.5}
   .rev .reply{margin-top:9px;font-size:12.5px;color:var(--accent);font-weight:600;cursor:pointer}
   .addons{grid-template-columns:repeat(3,1fr)}
-  .addon{border:1px solid var(--line);border-radius:13px;padding:16px;background:#fff;display:flex;flex-direction:column;gap:8px}
-  .addon .an{font-weight:700;font-size:14px;color:var(--navy)}
+  .addon{border:1px solid var(--line);border-radius:13px;padding:16px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+  .addon .an{font-weight:700;font-size:14px;color:var(--text)}
   .addon .ad{font-size:12.5px;color:var(--grey);line-height:1.5;flex:1}
   .toggle{display:flex;align-items:center;gap:9px;margin-top:6px}
   .sw{width:42px;height:23px;border-radius:20px;background:#cdd6e0;position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
   .sw.on{background:var(--teal)}
-  .sw::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:var(--card);transition:.2s}
   .sw.on::after{left:21px}
   .sw-label{font-size:12px;font-weight:600;color:var(--grey)}
   .pill{display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:20px;padding:3px 11px;font-size:11.5px;color:var(--grey);font-weight:600}
-  .banner{background:linear-gradient(100deg,#eaf2fb,#e7f7f3);border:1px solid #d4e6f2;border-radius:14px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:14px}
+  .banner{background:linear-gradient(100deg,#16202c,#141f22);border:1px solid #d4e6f2;border-radius:14px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:14px}
   .banner .bigdot{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(43,179,163,.2)}
-  .banner b{color:var(--navy)}
+  .banner b{color:var(--text)}
   .muted{font-size:12px;color:var(--grey)}
   #reqModal{position:fixed;inset:0;z-index:60;background:rgba(15,25,40,.55);display:none;align-items:center;justify-content:center;padding:20px}
   #reqModal.show{display:flex}
-  .reqCard{background:#fff;border-radius:16px;padding:26px;width:460px;max-width:94vw;box-shadow:0 24px 60px rgba(0,0,0,.35)}
-  .reqCard h3{color:var(--navy);font-size:18px;margin-bottom:4px}
+  .reqCard{background:var(--card);border-radius:16px;padding:26px;width:460px;max-width:94vw;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+  .reqCard h3{color:var(--text);font-size:18px;margin-bottom:4px}
   .reqCard .rs{font-size:13px;color:var(--grey);margin-bottom:16px}
   .reqCard label{display:block;font-size:12px;font-weight:600;color:var(--grey);margin:12px 0 5px}
   .reqCard select,.reqCard textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft);font-family:inherit}
@@ -229,7 +229,7 @@
               <input id="askInput" placeholder="Type your question…" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft)">
               <button class="btn btn-approve" id="askBtn" style="padding:11px 18px">Ask</button>
             </div>
-            <div id="askAnswer" style="display:none;margin-top:12px;font-size:13.5px;line-height:1.7;color:#46505e;background:var(--soft);border-radius:10px;padding:14px 16px;white-space:pre-wrap"></div>
+            <div id="askAnswer" style="display:none;margin-top:12px;font-size:13.5px;line-height:1.7;color:#b3bdc9;background:var(--soft);border-radius:10px;padding:14px 16px;white-space:pre-wrap"></div>
           </div>
 
           <div class="grid kpis">
@@ -252,7 +252,7 @@
             <div class="col section" style="margin-top:0">
               <h2>This week</h2>
               <div class="desc">What needs your attention.</div>
-              <div style="font-size:13.5px;line-height:2.1;color:#46505e">
+              <div style="font-size:13.5px;line-height:2.1;color:#b3bdc9">
                 <div>🟢 <b>4 items</b> waiting for your approval</div>
                 <div>🟠 Google Business Profile still <b>unclaimed</b></div>
                 <div>🟠 Address mismatch on Yelp (old Sherman Oaks)</div>
@@ -319,23 +319,23 @@
         </section>
 
         <section class="page" id="seo">
-          <div class="section" style="margin-top:0;border:1px solid var(--teal);background:linear-gradient(100deg,#f0f9f7,#eef4fb)">
+          <div class="section" style="margin-top:0;border:1px solid var(--teal);background:linear-gradient(100deg,#152230,#141d2a)">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
               <div class="mark" style="width:30px;height:30px;font-size:13px;border-radius:8px">SD</div>
               <h2 style="margin:0">SEO &amp; Marketing — managed by <span id="svcProvider">Steve's Dev &amp; Data</span></h2>
             </div>
             <div class="desc" id="svcSummary" style="margin-bottom:14px"></div>
-            <div style="background:#e6ebf1;border-radius:20px;height:12px;overflow:hidden;margin-bottom:6px">
+            <div style="background:#2b3543;border-radius:20px;height:12px;overflow:hidden;margin-bottom:6px">
               <div id="svcBar" style="height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--accent));transition:width .5s"></div>
             </div>
             <div class="muted" id="svcProgress" style="margin-bottom:16px"></div>
             <div class="row">
               <div class="col">
                 <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">✓ Delivered by Steve's Dev &amp; Data</div>
-                <div id="svcDelivered" style="font-size:13px;line-height:1.9;color:#46505e"></div>
+                <div id="svcDelivered" style="font-size:13px;line-height:1.9;color:#b3bdc9"></div>
               </div>
               <div class="col">
-                <div style="font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Your punchlist — check off as done</div>
+                <div style="font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Your punchlist — check off as done</div>
                 <div id="svcTodo"></div>
               </div>
             </div>
@@ -367,7 +367,7 @@
           <div class="section">
             <h2>Official business info (NAP) — use this everywhere</h2>
             <div class="desc">Every listing must match character-for-character. Inconsistent NAP is why rankings suffer.</div>
-            <div id="seoNap" style="font-size:13.5px;line-height:2;color:#46505e"></div>
+            <div id="seoNap" style="font-size:13.5px;line-height:2;color:#b3bdc9"></div>
           </div>
 
           <div class="section">
@@ -379,7 +379,7 @@
           <div class="section">
             <h2>Claim the Google Business Profile (highest priority)</h2>
             <div class="desc">Needs Anita's own Google login — the steps, in order:</div>
-            <ol id="seoGbp" style="font-size:13.5px;line-height:2;color:#46505e;padding-left:20px"></ol>
+            <ol id="seoGbp" style="font-size:13.5px;line-height:2;color:#b3bdc9;padding-left:20px"></ol>
           </div>
 
           <div class="section">
@@ -450,7 +450,7 @@
             </div>
           </div>
           <div class="grid kpis" id="rpKpis" style="margin-top:2px"></div>
-          <div class="section"><h2>What's working / what to pivot</h2><div id="rpRecs" style="font-size:13.5px;line-height:1.9;color:#46505e"></div></div>
+          <div class="section"><h2>What's working / what to pivot</h2><div id="rpRecs" style="font-size:13.5px;line-height:1.9;color:#b3bdc9"></div></div>
           <div class="section"><h2>Leads by source</h2><div id="rpSources"></div></div>
           <div class="section"><h2>SEO keyword movement</h2><div id="rpSeo"></div></div>
         </section>
@@ -591,7 +591,7 @@
             <button class="btn btn-edit" id="brainInterview" style="margin-top:6px;padding:9px 16px">✨ Set up my Brain (2 min)</button>
             <div id="brainWizard" style="display:none;margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--soft)"></div>
             <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-              <select id="brainCat" style="padding:11px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff">
+              <select id="brainCat" style="padding:11px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:var(--card)">
                 <option value="voice">Voice/tone</option><option value="business">Business fact</option><option value="ideal-client">Ideal client</option><option value="market">Market</option><option value="dont">Never do</option><option value="general">General</option>
               </select>
               <input id="brainIn" placeholder="Teach it something — e.g. 'I specialize in luxury Studio City homes' or 'never use exclamation points'" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft)">
@@ -605,7 +605,7 @@
           <div class="section" style="margin-top:0">
             <h2>Agent settings</h2>
             <div class="desc">Tenant configuration (what makes this multi-tenant).</div>
-            <div style="font-size:13.5px;line-height:2.2;color:#46505e">
+            <div style="font-size:13.5px;line-height:2.2;color:#b3bdc9">
               <div><b>Business:</b> The Rich Group</div>
               <div><b>Address:</b> 12711 Ventura Blvd #110, Studio City, CA 91604</div>
               <div><b>Phone:</b> (818) 632-2258</div>
@@ -1000,11 +1000,11 @@
     document.getElementById("seoMetas").innerHTML=(C.metas||[]).map(function(m){
       return '<div class="qcard" style="padding:12px 16px"><div class="qhead" style="margin-bottom:4px"><span class="tag t-gbp">'+m.page+'</span>'
         +'<span class="ttl" style="font-size:13px">'+m.title+'</span>'+copyBtn(m.title)+'</div>'
-        +'<div style="font-size:12.5px;color:#46505e;display:flex;gap:8px;align-items:center">'+m.desc+' '+copyBtn(m.desc)+'</div></div>';
+        +'<div style="font-size:12.5px;color:#b3bdc9;display:flex;gap:8px;align-items:center">'+m.desc+' '+copyBtn(m.desc)+'</div></div>';
     }).join("");
     document.getElementById("seoFaq").innerHTML=(C.faq||[]).map(function(f){
       return '<div class="qcard" style="padding:12px 16px"><div class="qhead" style="margin-bottom:4px"><span class="ttl" style="font-size:13.5px">'+f.q+'</span>'+copyBtn(f.q+"\n"+f.a)+'</div>'
-        +'<div style="font-size:12.5px;color:#46505e">'+f.a+'</div></div>';
+        +'<div style="font-size:12.5px;color:#b3bdc9">'+f.a+'</div></div>';
     }).join("");
     document.getElementById("seoBlog").innerHTML=(C.blogIdeas||[]).map(function(b,i){
       return '<div class="qcard" style="padding:12px 16px;display:flex;align-items:center;gap:10px"><span class="ttl" style="flex:1;font-size:13.5px">'+b+'</span>'
@@ -1044,7 +1044,7 @@
       var badge=t.owner==="anita"?'<span class="pill" style="color:var(--accent);border-color:#cfe0f0">You</span>':'<span class="pill" style="color:var(--teal);border-color:#bfe6df">SD&D</span>';
       return '<div class="qcard'+(done?" done":"")+'" style="padding:10px 14px;display:flex;align-items:center;gap:10px">'
         +'<input type="checkbox" data-punch="t'+i+'" '+(done?"checked":"")+' style="width:17px;height:17px;accent-color:var(--teal);flex-shrink:0">'
-        +'<span style="flex:1;font-size:13px;color:#46505e'+(done?";text-decoration:line-through":"")+'">'+t.t+'</span>'+badge+'</div>';
+        +'<span style="flex:1;font-size:13px;color:#b3bdc9'+(done?";text-decoration:line-through":"")+'">'+t.t+'</span>'+badge+'</div>';
     }).join("");
     var delN=(sv.delivered||[]).length;
     var doneN=todo.filter(function(t,i){return state.punch["t"+i]}).length;
@@ -1086,7 +1086,7 @@
     var sv=C.service||{delivered:[],todo:[]};
     var doneN=(sv.todo||[]).filter(function(t,i){return state.punch["t"+i]}).length;
     el.innerHTML='<div class="muted" style="margin-bottom:8px">Keyword movement vs last week'+(prev?"":" (first scan — this is your baseline)")+':</div>'+rows
-      +'<div style="margin-top:12px;font-size:13px;color:#46505e">📋 Punchlist: <b>'+doneN+'/'+(sv.todo||[]).length+'</b> of your steps done · ✅ <b>'+(sv.delivered||[]).length+'</b> deliverables completed by Steve\'s Dev & Data.</div>';
+      +'<div style="margin-top:12px;font-size:13px;color:#b3bdc9">📋 Punchlist: <b>'+doneN+'/'+(sv.todo||[]).length+'</b> of your steps done · ✅ <b>'+(sv.delivered||[]).length+'</b> deliverables completed by Steve\'s Dev & Data.</div>';
   }
   function renderRank(d){
     var latest=d.latest; if(!latest){ document.getElementById("rankTable").innerHTML='<div class="muted">No checks yet — hit the button.</div>'; return; }
@@ -1244,10 +1244,10 @@
       .then(function(r){return r.json()}).then(function(){ document.getElementById("adSaveMsg").textContent="✅ Saved"; setTimeout(function(){document.getElementById("adSaveMsg").textContent="";},1500); }); });
   function adField(label,val,hint){
     if(!val) return "";
-    return '<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px">'+label+'</span>'
+    return '<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--card)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.3px">'+label+'</span>'
       +'<button class="btn btn-edit" data-copy="'+encodeURIComponent(val)+'" style="padding:3px 10px;font-size:11px">Copy</button></div>'
-      +'<div style="font-size:13.5px;color:#1d2733;white-space:pre-wrap">'+esc(val)+'</div>'
+      +'<div style="font-size:13.5px;color:var(--text);white-space:pre-wrap">'+esc(val)+'</div>'
       +(hint?'<div style="font-size:10.5px;color:var(--grey);margin-top:3px">'+hint+'</div>':'')+'</div>';
   }
   function renderAd(ad){
@@ -1475,7 +1475,7 @@
       var e=d.entries||[];
       document.getElementById("brainList").innerHTML=e.length?e.map(function(x){
         var tag=x.source==="learned"?'<span class="pill" style="color:var(--teal);border-color:#bfe6df">learned</span>':x.source==="seed"?'<span class="pill">default</span>':'<span class="pill" style="color:var(--accent);border-color:#cfe0f0">taught</span>';
-        return '<div class="qcard" style="padding:10px 15px;display:flex;align-items:center;gap:10px"><span style="flex:1;font-size:13.5px;color:#46505e">'+esc(x.text)+'</span>'+tag+(x.source==="seed"?'':'<button data-brdel="'+x.id+'" style="background:none;border:0;color:var(--red);cursor:pointer">✕</button>')+'</div>';
+        return '<div class="qcard" style="padding:10px 15px;display:flex;align-items:center;gap:10px"><span style="flex:1;font-size:13.5px;color:#b3bdc9">'+esc(x.text)+'</span>'+tag+(x.source==="seed"?'':'<button data-brdel="'+x.id+'" style="background:none;border:0;color:var(--red);cursor:pointer">✕</button>')+'</div>';
       }).join(""):'<div class="muted">Nothing taught yet. Add facts above and every post gets more like you.</div>';
     }).catch(function(){});
   }
@@ -1493,7 +1493,7 @@
       .then(function(r){return r.json()}).then(function(d){
         b.textContent="Get ideas"; b.disabled=false;
         var ideas=d.ideas||[];
-        box.innerHTML=ideas.length?ideas.map(function(it,i){return '<div class="qcard" style="padding:12px 15px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-weight:600;font-size:14px;color:#1d2733">'+esc(it.title)+'</div><div style="font-size:12.5px;color:var(--grey)">'+esc(it.angle)+'</div></div><button class="btn btn-approve" data-idea="'+i+'" style="padding:7px 13px;font-size:12px">Draft this</button></div>';}).join(""):'<div class="muted">Could not fetch ideas — try again.</div>';
+        box.innerHTML=ideas.length?ideas.map(function(it,i){return '<div class="qcard" style="padding:12px 15px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--text)">'+esc(it.title)+'</div><div style="font-size:12.5px;color:var(--grey)">'+esc(it.angle)+'</div></div><button class="btn btn-approve" data-idea="'+i+'" style="padding:7px 13px;font-size:12px">Draft this</button></div>';}).join(""):'<div class="muted">Could not fetch ideas — try again.</div>';
         box._ideas=ideas;
       }).catch(function(){ b.textContent="Get ideas"; b.disabled=false; box.innerHTML='<div class="muted">Error — try again.</div>'; });
   });
@@ -1512,7 +1512,7 @@
     if(w.style.display==="block"){ w.style.display="none"; return; }
     w.style.display="block";
     w.innerHTML='<div style="font-size:13px;color:var(--grey);margin-bottom:10px">Answer what you can — skip anything. Each answer teaches the AI your style.</div>'
-      +BQ.map(function(q,i){return '<label style="display:block;font-size:12.5px;font-weight:600;margin:10px 0 4px">'+esc(q[0])+'</label><input id="bq'+i+'" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff">';}).join("")
+      +BQ.map(function(q,i){return '<label style="display:block;font-size:12.5px;font-weight:600;margin:10px 0 4px">'+esc(q[0])+'</label><input id="bq'+i+'" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--card)">';}).join("")
       +'<button class="btn btn-approve" id="bqSave" style="margin-top:12px;padding:10px 18px">Save to Brain</button> <span class="muted" id="bqMsg"></span>';
     document.getElementById("bqSave").addEventListener("click",function(){
       var saves=BQ.map(function(q,i){ var v=(document.getElementById("bq"+i)||{}).value||""; v=v.trim(); if(!v)return null;
@@ -1555,7 +1555,7 @@
     var g=document.getElementById("galGrid");
     if(!items.length){ g.innerHTML='<div class="muted">No images yet — upload listing photos above, or generate headshots &amp; posts.</div>'; return; }
     g.innerHTML=items.map(function(i){
-      return '<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff">'
+      return '<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)">'
         +'<img src="'+galURL(i.url)+'" style="width:100%;height:130px;object-fit:cover;display:block">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;font-size:11px">'
         +'<span class="pill" style="text-transform:capitalize">'+i.kind+'</span>'
@@ -1597,7 +1597,7 @@
         var st=l.status||"new";
         var opts=LEAD_STATES.map(function(x){return '<option value="'+x+'"'+(x===st?" selected":"")+'>'+x+'</option>'}).join("");
         return '<div class="qcard" style="padding:12px 15px"><div class="qhead"><span class="tag t-gbp">'+esc(l.source||"lead")+'</span><span class="ttl">'+esc(l.name)+'</span><span class="when">'+new Date(l.at).toLocaleDateString()+'</span></div>'
-          +'<div style="font-size:13px;color:#46505e;margin-bottom:8px">📞 <a href="tel:'+esc(l.phone)+'">'+esc(l.phone)+'</a>'+(l.address?' · 🏠 '+esc(l.address):'')+'</div>'
+          +'<div style="font-size:13px;color:#b3bdc9;margin-bottom:8px">📞 <a href="tel:'+esc(l.phone)+'">'+esc(l.phone)+'</a>'+(l.address?' · 🏠 '+esc(l.address):'')+'</div>'
           +'<div class="qactions"><select data-lead="'+l.id+'" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px;text-transform:capitalize">'+opts+'</select></div></div>';
       }).join("");
     }).catch(function(){});

@@ -294,9 +294,13 @@
     </div>
   </div>
 
+<script src="/content/config.js"></script>
 <script src="/content/campaign.js"></script>
 <script>
 (function(){
+  // When served from Vercel (static), API calls go to the LAN engines via the tunnel.
+  // apiBase: set in content/config.js once the tunnel/host for the engines exists. Empty = same origin.
+  var API = (window.PORTAL_CONFIG && window.PORTAL_CONFIG.apiBase) || "";
   // ---- login ----
   var login=document.getElementById("login"), app=document.getElementById("app");
   function enter(){ login.style.display="none"; app.classList.add("show"); }
@@ -327,7 +331,7 @@
   var QUEUE=(window.CAMPAIGN&&window.CAMPAIGN.queue)||[];
   var SERVER_DRAFTS=[];
   function loadServerDrafts(){
-    fetch("/api/drafts").then(function(r){return r.json()}).then(function(d){
+    fetch(API+"/api/drafts").then(function(r){return r.json()}).then(function(d){
       SERVER_DRAFTS=d.drafts||[]; renderQueue();
     }).catch(function(){});
   }
@@ -365,11 +369,11 @@
     var b=e.target.closest("button[data-act]");
     if(b){
       var id=b.getAttribute("data-id"), act=b.getAttribute("data-act"), item=findItem(id);
-      if(String(id).indexOf("agent_")===0){ fetch("/api/drafts?id="+id,{method:"DELETE"}).catch(function(){}); }
+      if(String(id).indexOf("agent_")===0){ fetch(API+"/api/drafts?id="+id,{method:"DELETE"}).catch(function(){}); }
       if(act==="approve"){
         if(item && item.publish){
           state.queue[id]="staged"; save(); renderQueue();
-          fetch("/api/publish",{method:"POST",headers:{"Content-Type":"application/json"},
+          fetch(API+"/api/publish",{method:"POST",headers:{"Content-Type":"application/json"},
             body:JSON.stringify({caption:item.body,platforms:item.platforms||["facebook"]})})
             .then(function(r){return r.json()})
             .then(function(d){ state.queue[id]=d.staged?"staged":"published"; save(); renderQueue(); })
@@ -418,7 +422,7 @@
       var name=card.querySelector(".name").textContent;
       var txt=card.querySelector(".txt").textContent;
       r.textContent="Drafting…";
-      fetch("/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
+      fetch(API+"/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({kind:"review_reply",brief:"Reply to this review from "+name+": "+txt})})
         .then(function(x){return x.json()})
         .then(function(d){
@@ -496,7 +500,7 @@
     var pv=document.getElementById("pvCaptions"); pv.innerHTML="";
 
     var caps=Promise.all(plats.map(function(p){
-      return fetch("/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
+      return fetch(API+"/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({kind:p,brief:brief})})
         .then(function(r){return r.json()})
         .then(function(d){ sel.gen.captions[p]=d.text||("[error: "+d.error+"]");
@@ -507,7 +511,7 @@
     if(sel.imgmode==="ai"){
       var t0=Date.now();
       document.getElementById("pvImage").textContent="Rendering image…";
-      img=fetch("/api/image",{method:"POST",headers:{"Content-Type":"application/json"},
+      img=fetch(API+"/api/image",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({brief:brief,aspect:"portrait",engine:"draft"})})
         .then(function(r){return r.json()})
         .then(function(d){
@@ -515,7 +519,7 @@
           return new Promise(function(resolve,reject){
             var iv=setInterval(function(){
               document.getElementById("pvImage").textContent="Rendering image… "+Math.round((Date.now()-t0)/1000)+"s";
-              fetch("/api/image?promptId="+d.promptId+"&engine=draft").then(function(r){return r.json()}).then(function(x){
+              fetch(API+"/api/image?promptId="+d.promptId+"&engine=draft").then(function(r){return r.json()}).then(function(x){
                 if(x.status==="done"){ clearInterval(iv); sel.gen.image=x.image;
                   document.getElementById("pvImage").innerHTML='<img src="'+x.image+'" style="width:100%;display:block">'; resolve(); }
                 else if(x.status==="error"){ clearInterval(iv); document.getElementById("pvImage").textContent="Image failed — "+(x.error||""); resolve(); }

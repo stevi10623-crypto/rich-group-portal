@@ -32,6 +32,12 @@ function shimRes(res) {
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, `http://localhost:${PORT}`);
 
+  // CORS: allow the Vercel-hosted UI to call this API through the tunnel.
+  res.setHeader("Access-Control-Allow-Origin", "https://rich-group-portal.vercel.app");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") { res.statusCode = 204; return res.end(); }
+
   // API routes
   const apiMatch = u.pathname.match(/^\/api\/([a-z_-]+)\/?$/);
   if (apiMatch) {

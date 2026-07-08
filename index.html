@@ -173,7 +173,6 @@
         <button data-p="reviews"><span class="ic">★</span> Reviews</button>
         <button data-p="gallery"><span class="ic">▦</span> Gallery</button>
         <button data-p="inbox"><span class="ic">✉</span> Requests <span class="badge" id="inboxBadge" style="display:none">0</span></button>
-        <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
         <button data-p="seo"><span class="ic">⌖</span> SEO Plan</button>
         </div>
       </nav>
@@ -426,14 +425,6 @@
           </div>
         </section>
 
-        <section class="page" id="addons">
-          <div class="section" style="margin-top:0">
-            <h2>Add-on services</h2>
-            <div class="desc">Agencies typically charge <b>$500 to $2,000 a month</b> for these. Toggle one on and the Dev &amp; Data team sets it up for you, priced separately and always less than an agency. Nothing is charged until you approve a quote.</div>
-            <div class="grid addons" id="addonGrid"></div>
-          </div>
-        </section>
-
         <section class="page" id="leads">
           <div class="section" style="margin-top:0">
             <h2>Leads — captured from your funnel</h2>
@@ -543,9 +534,14 @@
           <div class="section" style="margin-top:0">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
               <div style="flex:1;min-width:200px"><h2 style="margin:0">Requests</h2><div class="desc" style="margin:0">Ask Steve's Dev &amp; Data for anything — a new tool, a change, a digital card, headshots. Track status here.</div></div>
-              <button class="btn btn-approve" id="inboxAdd" style="padding:11px 20px">+ New request</button>
+              <button class="btn btn-approve" id="inboxAdd" style="padding:11px 20px">✍ Make a request</button>
             </div>
             <div id="inboxList" style="margin-top:16px"></div>
+          </div>
+          <div class="section">
+            <h2>Or turn on a service</h2>
+            <div class="desc">Agencies typically charge <b>$500 to $2,000 a month</b> for these. Flip one on — it's added to your SEO Plan and Steve is alerted right away to set it up. Nothing is charged until you approve a quote.</div>
+            <div class="grid addons" id="addonGrid"></div>
           </div>
         </section>
 
@@ -856,16 +852,15 @@
   document.getElementById("addonGrid").addEventListener("click",function(e){
     var sw=e.target.closest(".sw"); if(!sw)return;
     var k=sw.getAttribute("data-k"); var turningOn=!state.addons[k];
-    state.addons[k]=turningOn; save(); renderAddons();
+    state.addons[k]=turningOn; save(); renderAddons(); if(typeof renderService==="function") renderService();
     if(turningOn){
       var a=ADDONS.find(function(x){return x.k===k});
       fetch(API+"/api/request",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({category:"Add-on",message:"Activate add-on: "+(a?a.n:k)+" — "+(a?a.d:"")})}).catch(function(){});
-      // little confirmation
+        body:JSON.stringify({category:"Add-on",notify:true,message:"ADD-ON REQUESTED: "+(a?a.n:k)+" — "+(a?a.d:"")+" (added to SEO Plan; please set up + send a quote)"})}).catch(function(){});
       var g=document.getElementById("addonGrid");
       var note=document.createElement("div"); note.className="muted"; note.style.marginTop="8px";
-      note.textContent="✅ Request sent to Steve's Dev & Data to set up "+(a?a.n:k)+".";
-      g.parentNode.appendChild(note); setTimeout(function(){note.remove();},3500);
+      note.textContent="✅ Added to your SEO Plan and Steve has been alerted to set up "+(a?a.n:k)+". Nothing is charged until you approve a quote.";
+      g.parentNode.appendChild(note); setTimeout(function(){note.remove();},4500);
     }
   });
 
@@ -1086,6 +1081,14 @@
         +'<input type="checkbox" data-punch="t'+i+'" '+(done?"checked":"")+' style="width:17px;height:17px;accent-color:var(--teal);flex-shrink:0">'
         +'<span style="flex:1;font-size:13px;color:#b3bdc9'+(done?";text-decoration:line-through":"")+'">'+t.t+'</span>'+badge+'</div>';
     }).join("");
+    // add-ons Anita turned on (from the Requests page) appear here as requested services
+    var reqAddons=(typeof ADDONS!=="undefined"?ADDONS:[]).filter(function(a){return state.addons[a.k];});
+    if(reqAddons.length){
+      document.getElementById("svcTodo").innerHTML += '<div style="font-size:11px;font-weight:600;color:var(--grey);margin:12px 0 4px">ADD-ONS YOU REQUESTED</div>'
+        +reqAddons.map(function(a){ return '<div class="qcard" style="padding:10px 14px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--teal)">'
+          +'<span style="font-size:15px">✚</span><span style="flex:1;font-size:13px;color:#b3bdc9"><b>'+esc(a.n)+'</b> — requested, Steve\'s Dev &amp; Data is setting this up</span>'
+          +'<span class="pill" style="color:var(--teal);border-color:#bfe6df">Add-on</span></div>'; }).join("");
+    }
     var delN=(sv.delivered||[]).length;
     var doneN=todo.filter(function(t,i){return state.punch["t"+i]}).length;
     var total=delN+todo.length, complete=delN+doneN;

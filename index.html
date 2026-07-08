@@ -165,6 +165,7 @@
         <div id="moreNav" style="display:none">
         <button data-p="social"><span class="ic">⇄</span> Auto-Post Setup</button>
         <button data-p="ads"><span class="ic">◈</span> Ads</button>
+        <button data-p="topics"><span class="ic">💡</span> Post Ideas</button>
         <button data-p="reports"><span class="ic">▦</span> Reports</button>
         <button data-p="headshot"><span class="ic">☺</span> Headshot Studio</button>
         <button data-p="card"><span class="ic">▭</span> Digital Card</button>
@@ -571,11 +572,28 @@
           <div class="section"><h2>Scheduled</h2><div id="socScheduled"></div></div>
         </section>
 
+        <section class="page" id="topics">
+          <div class="section" style="margin-top:0">
+            <h2>💡 Post Ideas</h2>
+            <div class="desc">Not sure what to post? Get fresh, timely ideas pulled from today's news and your local market. Pick one and it drafts the post for you.</div>
+            <div style="display:flex;gap:8px;margin:8px 0 14px">
+              <input id="topicFocus" placeholder="Optional: a topic to focus on (e.g. interest rates, Studio City, first-time buyers)" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft)">
+              <button class="btn btn-approve" id="topicsBtn" style="padding:11px 18px">Get ideas</button>
+            </div>
+            <div id="topicsList"></div>
+          </div>
+        </section>
+
         <section class="page" id="brain">
           <div class="section" style="margin-top:0">
             <h2>🧠 The Brain</h2>
             <div class="desc">Teach the AI about you and your business — your voice, your niche, what you like and don't. It remembers and uses this in every post it writes, so it gets smarter over time.</div>
-            <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-edit" id="brainInterview" style="margin-top:6px;padding:9px 16px">✨ Set up my Brain (2 min)</button>
+            <div id="brainWizard" style="display:none;margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--soft)"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <select id="brainCat" style="padding:11px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff">
+                <option value="voice">Voice/tone</option><option value="business">Business fact</option><option value="ideal-client">Ideal client</option><option value="market">Market</option><option value="dont">Never do</option><option value="general">General</option>
+              </select>
               <input id="brainIn" placeholder="Teach it something — e.g. 'I specialize in luxury Studio City homes' or 'never use exclamation points'" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft)">
               <button class="btn btn-approve" id="brainAdd" style="padding:11px 18px">Teach</button>
             </div>
@@ -649,7 +667,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Calendar",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",brain:"The Brain",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Calendar",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",topics:"Post Ideas",brain:"The Brain",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",content:"4",leads:"5"};
@@ -1463,10 +1481,45 @@
   }
   document.getElementById("brainAdd").addEventListener("click",function(){
     var t=document.getElementById("brainIn").value.trim(); if(!t)return;
-    fetch(API+"/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t,source:"taught"})}).then(function(){ document.getElementById("brainIn").value=""; renderBrain(); });
+    fetch(API+"/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t,source:"taught",category:document.getElementById("brainCat").value})}).then(function(){ document.getElementById("brainIn").value=""; renderBrain(); });
   });
   document.getElementById("brainIn").addEventListener("keydown",function(e){ if(e.key==="Enter")document.getElementById("brainAdd").click(); });
   document.getElementById("brainList").addEventListener("click",function(e){ var b=e.target.closest("[data-brdel]"); if(!b)return; fetch(API+"/api/brain?id="+b.getAttribute("data-brdel"),{method:"DELETE"}).then(renderBrain); });
+  // ---- Post Ideas ----
+  document.getElementById("topicsBtn").addEventListener("click",function(){
+    var b=this; b.textContent="Finding ideas…"; b.disabled=true;
+    var box=document.getElementById("topicsList"); box.innerHTML='<div class="muted">Searching the news &amp; your market…</div>';
+    fetch(API+"/api/topics",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({focus:document.getElementById("topicFocus").value})})
+      .then(function(r){return r.json()}).then(function(d){
+        b.textContent="Get ideas"; b.disabled=false;
+        var ideas=d.ideas||[];
+        box.innerHTML=ideas.length?ideas.map(function(it,i){return '<div class="qcard" style="padding:12px 15px;display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-weight:600;font-size:14px;color:#1d2733">'+esc(it.title)+'</div><div style="font-size:12.5px;color:var(--grey)">'+esc(it.angle)+'</div></div><button class="btn btn-approve" data-idea="'+i+'" style="padding:7px 13px;font-size:12px">Draft this</button></div>';}).join(""):'<div class="muted">Could not fetch ideas — try again.</div>';
+        box._ideas=ideas;
+      }).catch(function(){ b.textContent="Get ideas"; b.disabled=false; box.innerHTML='<div class="muted">Error — try again.</div>'; });
+  });
+  document.getElementById("topicsList").addEventListener("click",function(e){
+    var b=e.target.closest("[data-idea]"); if(!b)return;
+    var it=(document.getElementById("topicsList")._ideas||[])[Number(b.getAttribute("data-idea"))]; if(!it)return;
+    document.getElementById("brief").value=it.title+". "+it.angle;
+    document.querySelector('[data-p="create"]').click();
+    var bf=document.getElementById("brief"); if(bf){ try{bf.scrollIntoView({behavior:"smooth"});}catch(x){} }
+  });
+
+  // ---- Brain interview ----
+  var BQ=[["What makes you different from other agents?","business"],["Who is your ideal client / your niche?","ideal-client"],["Describe your voice and tone in a few words.","voice"],["What should we NEVER say or do in your posts?","dont"],["Anything else the AI should always know about you?","business"]];
+  document.getElementById("brainInterview").addEventListener("click",function(){
+    var w=document.getElementById("brainWizard");
+    if(w.style.display==="block"){ w.style.display="none"; return; }
+    w.style.display="block";
+    w.innerHTML='<div style="font-size:13px;color:var(--grey);margin-bottom:10px">Answer what you can — skip anything. Each answer teaches the AI your style.</div>'
+      +BQ.map(function(q,i){return '<label style="display:block;font-size:12.5px;font-weight:600;margin:10px 0 4px">'+esc(q[0])+'</label><input id="bq'+i+'" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff">';}).join("")
+      +'<button class="btn btn-approve" id="bqSave" style="margin-top:12px;padding:10px 18px">Save to Brain</button> <span class="muted" id="bqMsg"></span>';
+    document.getElementById("bqSave").addEventListener("click",function(){
+      var saves=BQ.map(function(q,i){ var v=(document.getElementById("bq"+i)||{}).value||""; v=v.trim(); if(!v)return null;
+        return fetch(API+"/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:q[0].replace("?","")+": "+v,category:q[1],source:"taught"})}); }).filter(Boolean);
+      Promise.all(saves).then(function(){ document.getElementById("bqMsg").textContent="✅ Saved "+saves.length+" to your Brain"; renderBrain(); setTimeout(function(){w.style.display="none";},1500); });
+    });
+  });
   renderBrain();
 
   function renderInbox(){

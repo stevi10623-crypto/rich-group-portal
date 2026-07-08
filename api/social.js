@@ -44,6 +44,17 @@ module.exports = async (req, res) => {
     const b = req.body || {};
     const cur = load();
 
+    if (b.action === "plan") {
+      // manually add a post to the calendar on a specific date (from the Calendar day click)
+      const when = b.date ? new Date(b.date).toISOString() : nextSlot(cur.settings, cur.scheduled);
+      const item = { id: "sch_" + Date.now(), at: when, platforms: b.platforms || cur.settings.platforms, body: b.body || "", image: b.image || null, status: "scheduled" };
+      cur.scheduled.unshift(item); store(cur);
+      return res.status(200).json({ ok: true, item });
+    }
+    if (b.action === "unplan") {
+      cur.scheduled = (cur.scheduled || []).filter((x) => x.id !== b.id); store(cur);
+      return res.status(200).json({ ok: true });
+    }
     if (b.action === "settings") { cur.settings = { ...cur.settings, ...b.settings }; store(cur); return res.status(200).json({ ok: true, settings: cur.settings }); }
     if (b.action === "connect") { cur.settings.connected[b.platform] = !!b.on; store(cur); return res.status(200).json({ ok: true, settings: cur.settings }); }
     if (b.action === "schedule") {

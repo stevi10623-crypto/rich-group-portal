@@ -186,6 +186,7 @@
 
     <div class="main">
       <div class="topbar">
+        <button id="backBtn" style="display:none;background:var(--soft);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:7px 13px;font-size:13px;cursor:pointer;font-weight:600">‹ Back</button>
         <h1 id="pageTitle">Dashboard</h1>
         <div class="switcher">
           <span class="muted">Agent:</span>
@@ -683,15 +684,27 @@
     if(mt) mt.addEventListener("click",function(){ var open=mn.style.display!=="none"; mn.style.display=open?"none":"block"; document.getElementById("moreArrow").textContent=open?"▾":"▴"; });
     // if a page inside More is opened via keyboard/link, reveal More
   })();
-  document.getElementById("nav").addEventListener("click",function(e){
-    var b=e.target.closest("button"); if(!b)return;
-    var pg=b.getAttribute("data-p"); if(!pg) return; // ignore non-page buttons (e.g. More tools toggle)
+  var navHistory=[], curPage="dash";
+  function gotoPage(pg,fromBack){
     var pageEl=document.getElementById(pg); if(!pageEl) return;
+    if(!fromBack && pg!==curPage) navHistory.push(curPage);
+    curPage=pg;
     document.querySelectorAll(".nav button").forEach(function(x){x.classList.remove("active")});
-    b.classList.add("active");
+    var navBtn=document.querySelector('.nav button[data-p="'+pg+'"]'); if(navBtn) navBtn.classList.add("active");
     document.querySelectorAll(".page").forEach(function(x){x.classList.remove("active")});
     pageEl.classList.add("active");
     document.getElementById("pageTitle").textContent=titles[pg]||"";
+    document.getElementById("backBtn").style.display=navHistory.length?"block":"none";
+    try{ document.querySelector(".content").scrollTop=0; }catch(e){}
+  }
+  document.getElementById("nav").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b)return;
+    var pg=b.getAttribute("data-p"); if(!pg) return; // ignore non-page buttons (e.g. More tools toggle)
+    gotoPage(pg);
+  });
+  document.getElementById("backBtn").addEventListener("click",function(){
+    if(!navHistory.length) return;
+    gotoPage(navHistory.pop(), true);
   });
 
   // ---- queue (real campaign content + server-side agent drafts) ----
@@ -732,9 +745,14 @@
          +'<button class="btn btn-edit" data-edit="'+item.id+'">Edit</button>'
          +'<button class="btn btn-edit" data-rewrite="'+item.id+'">↻ Rewrite</button>'
          +'<button class="btn btn-reject" data-act="rejected" data-id="'+item.id+'">Reject</button>'; }
+      var imgControls = st ? '' : '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">'
+        +'<button class="btn btn-edit" data-img="'+item.id+'" style="padding:5px 11px;font-size:11px">'+(item.image?'🔄 Change image':'🖼 Add image')+'</button>'
+        +(item.image?'<button class="btn btn-edit" data-imgrm="'+item.id+'" style="padding:5px 11px;font-size:11px">✕ Remove image</button>':'')
+        +'<span class="muted" id="imgmsg-'+item.id+'" style="align-self:center;font-size:11px"></span></div>';
       div.innerHTML='<div class="qhead"><span class="tag '+item.tag+'">'+esc(item.label)+'</span>'
         +'<span class="ttl">'+esc(item.ttl)+'</span><span class="when">'+esc(item.when)+'</span></div>'
-        +(item.image?'<img src="'+item.image+'" style="max-width:280px;border-radius:9px;margin-bottom:10px;display:block">':'')
+        +(item.image?'<img src="'+item.image+'" style="max-width:280px;border-radius:9px;margin-bottom:6px;display:block">':'')
+        +imgControls
         +'<div class="qbody" id="qb-'+item.id+'">'+esc(item.body)+'</div>'
         +'<div class="qactions">'+actions+'</div>';
       list.appendChild(div);
@@ -785,12 +803,33 @@
       var kind=(item3.platforms&&item3.platforms[0])|| (item3.tag==="t-gbp"?"gbp":item3.tag==="t-blog"?"blog":"facebook");
       rw.textContent="Rewriting…"; rw.disabled=true;
       fetch(API+"/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({kind:kind,brief:"Rewrite this real-estate post to be fresh, engaging and different, keeping the same intent, offer, and call-to-action:\n\n"+item3.body})})
+        body:JSON.stringify({kind:kind,brief:"Rewrite this real-estate post so it is noticeably fresh and different, but keep the same intent, offer, call-to-action, and include hashtags:\n\n"+item3.body})})
         .then(function(r){return r.json()}).then(function(d){
           if(d.text){ item3.body=d.text; if(state.items.some(function(x){return x.id===id3})) save(); }
           renderQueue();
         }).catch(function(){ rw.textContent="↻ Rewrite"; rw.disabled=false; });
+      return;
     }
+    var im=e.target.closest("button[data-img]");
+    if(im){
+      var id4=im.getAttribute("data-img"), item4=findItem(id4); if(!item4)return;
+      var msg=document.getElementById("imgmsg-"+id4); im.disabled=true; var t0=Date.now();
+      var tick=setInterval(function(){ if(msg)msg.textContent="Rendering image… "+Math.round((Date.now()-t0)/1000)+"s"; },1000);
+      fetch(API+"/api/image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({brief:(item4.ttl||"")+". "+String(item4.body||"").slice(0,140),aspect:"square",engine:"draft"})})
+        .then(function(r){return r.json()}).then(function(d){
+          if(!d.promptId){ clearInterval(tick); if(msg)msg.textContent="Failed — try again"; im.disabled=false; return; }
+          var iv=setInterval(function(){
+            fetch(API+"/api/image?promptId="+d.promptId+"&engine=draft").then(function(r){return r.json()}).then(function(x){
+              if(x.status==="done"){ clearInterval(iv); clearInterval(tick); item4.image=x.image; if(state.items.some(function(y){return y.id===id4}))save(); renderQueue(); }
+              else if(x.status==="error"){ clearInterval(iv); clearInterval(tick); if(msg)msg.textContent="Failed — try again"; im.disabled=false; }
+            }).catch(function(){});
+          },2500);
+          setTimeout(function(){ clearInterval(iv); clearInterval(tick); if(im){im.disabled=false;} },90000);
+        }).catch(function(){ clearInterval(tick); if(msg)msg.textContent="Failed — try again"; im.disabled=false; });
+      return;
+    }
+    var imr=e.target.closest("button[data-imgrm]");
+    if(imr){ var id5=imr.getAttribute("data-imgrm"), item5=findItem(id5); if(item5){ item5.image=null; if(state.items.some(function(y){return y.id===id5}))save(); renderQueue(); } return; }
   });
 
   // ---- addons ----
@@ -1156,7 +1195,7 @@
     var k=b.getAttribute("data-quick");
     if(k==="today"){ loadServerDrafts(); document.querySelector('[data-p="queue"]').click();
       document.getElementById("quickStatus").textContent="Opening this morning's posts…"; return; }
-    if(k==="reviews"){ document.querySelector('[data-p="queue"]').click(); return; }
+    if(k==="reviews"){ document.querySelector('[data-p="reviews"]').click(); return; }
     if(k==="ad"){ document.querySelector('[data-p="ads"]').click(); return; }
     if(k==="hs"){ document.querySelector('[data-p="headshot"]').click(); return; }
     if(k==="rank"){ document.querySelector('[data-p="seo"]').click(); var rb=document.getElementById("rescanBtn"); if(rb){ try{rb.scrollIntoView({behavior:"smooth"});}catch(e){} rb.click(); } return; }
@@ -1445,7 +1484,7 @@
 
   // ---- Content Calendar ----
   var calRef=new Date(); calRef.setDate(1); var calItems=[];
-  function loadCal(){ fetch(API+"/api/social").then(function(r){return r.json()}).then(function(d){ calItems=(d.scheduled||[]).map(function(x){return {at:new Date(x.at),platforms:x.platforms,body:x.body,status:x.status};}); renderCal(); }).catch(function(){ renderCal(); }); }
+  function loadCal(){ fetch(API+"/api/social").then(function(r){return r.json()}).then(function(d){ calItems=(d.scheduled||[]).map(function(x){return {id:x.id,at:new Date(x.at),platforms:x.platforms,body:x.body,image:x.image,status:x.status};}); renderCal(); }).catch(function(){ renderCal(); }); }
   function renderCal(){
     var y=calRef.getFullYear(), mo=calRef.getMonth();
     document.getElementById("calTitle").textContent=calRef.toLocaleString("en-US",{month:"long",year:"numeric"});
@@ -1456,17 +1495,32 @@
     for(var d=1;d<=days;d++){
       var dayItems=calItems.filter(function(x){return x.at.getFullYear()===y&&x.at.getMonth()===mo&&x.at.getDate()===d;});
       var today=(new Date().toDateString()===new Date(y,mo,d).toDateString());
-      cells+='<div style="min-height:56px;border:1px solid '+(today?"var(--accent)":"var(--line)")+';border-radius:8px;padding:4px;background:'+(dayItems.length?"#eef7f4":"#fff")+'">'
-        +'<div style="font-size:11px;color:'+(today?"var(--accent)":"#8a95a3")+';font-weight:'+(today?700:400)+'">'+d+'</div>'
+      cells+='<div class="calday" data-calday="'+y+'-'+mo+'-'+d+'" title="Click to add a post" style="cursor:pointer;min-height:56px;border:1px solid '+(today?"var(--accent)":"var(--line)")+';border-radius:8px;padding:4px;background:'+(dayItems.length?"#16302a":"var(--card)")+';transition:.12s">'
+        +'<div style="font-size:11px;color:'+(today?"var(--accent)":"var(--grey)")+';font-weight:'+(today?700:400)+'">'+d+'</div>'
         +dayItems.slice(0,2).map(function(x){return '<div style="font-size:9px;background:var(--teal);color:#04332e;border-radius:3px;padding:1px 3px;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+(x.platforms||[]).join(",")+'</div>'}).join("")
         +(dayItems.length>2?'<div style="font-size:9px;color:var(--grey)">+'+(dayItems.length-2)+'</div>':'')+'</div>';
     }
     document.getElementById("calGrid").innerHTML=cells;
     var upcoming=calItems.filter(function(x){return x.at.getFullYear()===y&&x.at.getMonth()===mo;}).sort(function(a,b){return a.at-b.at;});
-    document.getElementById("calList").innerHTML=upcoming.length?('<div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:6px">THIS MONTH</div>'+upcoming.map(function(x){return '<div class="qcard" style="padding:8px 14px"><div class="qhead"><span class="when">'+x.at.toLocaleString()+'</span><span class="pill">'+(x.platforms||[]).join(", ")+'</span></div><div class="qbody" style="font-size:12.5px">'+esc((x.body||"").slice(0,110))+'</div></div>';}).join("")):'<div class="muted">No posts scheduled this month. Turn on Auto-Post and approve posts to fill your calendar.</div>';
+    document.getElementById("calList").innerHTML=upcoming.length?('<div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:6px">THIS MONTH</div>'+upcoming.map(function(x){return '<div class="qcard" style="padding:10px 14px;display:flex;gap:12px;align-items:flex-start">'+(x.image?'<img src="'+x.image+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0">':'')+'<div style="flex:1"><div class="qhead"><span class="when">'+x.at.toLocaleString()+'</span><span class="pill">'+(x.platforms||[]).join(", ")+'</span></div><div class="qbody" style="font-size:12.5px">'+esc((x.body||"").slice(0,110))+'</div></div>'+(x.id?'<button data-unplan="'+x.id+'" title="Remove" style="background:none;border:0;color:var(--red);cursor:pointer;font-size:15px">✕</button>':'')+'</div>';}).join("")):'<div class="muted">No posts scheduled this month. Tap any day above to add a post, or turn on Auto-Post.</div>';
   }
+  document.getElementById("calList").addEventListener("click",function(e){ var u=e.target.closest("[data-unplan]"); if(!u)return; if(!confirm("Remove this planned post?"))return; fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"unplan",id:u.getAttribute("data-unplan")})}).then(function(){loadCal();}); });
   document.getElementById("calPrev").addEventListener("click",function(){ calRef.setMonth(calRef.getMonth()-1); renderCal(); });
   document.getElementById("calNext").addEventListener("click",function(){ calRef.setMonth(calRef.getMonth()+1); renderCal(); });
+  document.getElementById("calGrid").addEventListener("click",function(e){
+    var c=e.target.closest("[data-calday]"); if(!c)return;
+    var p=c.getAttribute("data-calday").split("-"); var date=new Date(Number(p[0]),Number(p[1]),Number(p[2]),9,0,0);
+    var topic=prompt("Add a post for "+date.toLocaleDateString()+"\n\nWhat should it be about? I'll write it and add a matching image.");
+    if(!topic||!topic.trim())return;
+    c.style.opacity="0.5"; c.style.pointerEvents="none";
+    var dd=c.querySelector("div"); if(dd) dd.innerHTML+=' <span style="font-size:9px;color:var(--teal)">…writing</span>';
+    Promise.all([
+      fetch(API+"/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({kind:"facebook",brief:topic})}).then(function(r){return r.json()}).then(function(d){return d.text||topic;}),
+      quickImage(topic)
+    ]).then(function(arr){
+      return fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"plan",date:date.toISOString(),body:arr[0],image:arr[1]||null,platforms:["facebook","instagram"]})});
+    }).then(function(){ loadCal(); }).catch(function(){ c.style.opacity="1"; c.style.pointerEvents="auto"; alert("Could not add that post — please try again."); });
+  });
   loadCal();
 
   // ---- The Brain ----

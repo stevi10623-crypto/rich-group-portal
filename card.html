@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Digital Card — The Rich Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Cinzel:wght@500;600&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{--burg:#8f2129}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -31,9 +33,12 @@
   var API=(location.hostname.indexOf("vercel.app")>-1)?"https://rgapi.myroostcrm.com":"";
   var slug=new URLSearchParams(location.search).get("slug")||(location.pathname.split("/card/")[1])||"anita-rich";
   var SOC={instagram:"IG",facebook:"f",linkedin:"in",x:"X",youtube:"▶",compass:"C"};
+  var FONTS={serif:'Georgia,"Times New Roman",serif',playfair:'"Playfair Display",Georgia,serif',cinzel:'"Cinzel",Georgia,serif',montserrat:'"Montserrat",sans-serif',sans:'system-ui,-apple-system,sans-serif'};
   function esc(s){var d=document.createElement("div");d.textContent=s||"";return d.innerHTML;}
   function render(c){
     var burg=c.brandColor||"#8f2129";
+    var font=FONTS[c.font]||FONTS.serif;
+    document.querySelector(".card").style.fontFamily=font;
     var initials=(c.name||"").split(" ").map(function(w){return w[0]}).join("").slice(0,2).toUpperCase();
     var photo=c.photoUrl?'<img class="photo" src="'+c.photoUrl+'" alt="">':'<div class="photo" style="color:'+burg+'">'+initials+'</div>';
     var logo=c.logoUrl?'<img class="logo" src="'+c.logoUrl+'" alt="">':'';

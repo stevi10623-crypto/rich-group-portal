@@ -58,7 +58,7 @@ async function ollama(system, user) {
     body: JSON.stringify({
       model: OLLAMA_MODEL,
       messages: [{ role: "system", content: system }, { role: "user", content: user }],
-      max_tokens: 1200,
+      max_tokens: 2600,
       temperature: 0.8,
     }),
     signal: AbortSignal.timeout(120000),
@@ -103,8 +103,20 @@ async function main() {
 
   // 2. write drafts
   const raw = await ollama(SYSTEM, `Today's research:\n\n${findings.join("\n\n")}\n\nWrite the 3 posts now. STRICT JSON array only.`);
-  const jsonText = raw.replace(/^```(json)?|```$/gm, "").trim();
-  const posts = JSON.parse(jsonText);
+  // Robust extraction: strip fences, slice the array, tolerate a truncated tail.
+  let posts;
+  try {
+    const clean = raw.replace(/```(json)?/g, "").trim();
+    const start = clean.indexOf("[");
+    let body = start >= 0 ? clean.slice(start) : clean;
+    const end = body.lastIndexOf("]");
+    if (end >= 0) body = body.slice(0, end + 1);
+    posts = JSON.parse(body);
+  } catch (e) {
+    // last resort: pull each {...} object individually
+    posts = (raw.match(/\{[^{}]*"platform"[^{}]*\}/g) || []).map((x) => { try { return JSON.parse(x); } catch { return null; } }).filter(Boolean);
+    if (!posts.length) throw e;
+  }
 
   // 3. generate an on-brand image for each post (Z-Image on the 3090)
   async function genImage(scene) {

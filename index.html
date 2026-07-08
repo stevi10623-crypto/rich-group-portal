@@ -160,6 +160,7 @@
         <button data-p="create"><span class="ic">✦</span> Create Post</button>
         <button data-p="queue"><span class="ic">✎</span> Approval Queue <span class="badge" id="qbadge">4</span></button>
         <button data-p="seo"><span class="ic">⌖</span> SEO Plan</button>
+        <button data-p="reports"><span class="ic">▦</span> Reports</button>
         <button data-p="content"><span class="ic">▤</span> Content</button>
         <button data-p="reviews"><span class="ic">★</span> Reviews</button>
         <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
@@ -405,6 +406,19 @@
           </div>
         </section>
 
+        <section class="page" id="reports">
+          <div class="section" style="margin-top:0">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:180px"><h2 style="margin:0">Performance report</h2><div class="desc" style="margin:0">What's working — so we pivot toward it.</div></div>
+              <div id="rpPeriod" style="display:flex;gap:6px"></div>
+            </div>
+          </div>
+          <div class="grid kpis" id="rpKpis" style="margin-top:2px"></div>
+          <div class="section"><h2>What's working / what to pivot</h2><div id="rpRecs" style="font-size:13.5px;line-height:1.9;color:#46505e"></div></div>
+          <div class="section"><h2>Leads by source</h2><div id="rpSources"></div></div>
+          <div class="section"><h2>SEO keyword movement</h2><div id="rpSeo"></div></div>
+        </section>
+
         <section class="page" id="ads">
           <div class="section" style="margin-top:0;border:1px solid var(--accent)">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -562,7 +576,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",seo:"4",content:"5",reviews:"6",addons:"7"};
@@ -1124,6 +1138,8 @@
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Title lines (one per line)</label><textarea id="cf_titles" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft);min-height:52px">'+((c.titleLines||[]).join("\n"))+'</textarea>'
       +fld("Company","cf_company",c.company)
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Brand color</label><input type="color" id="cf_color" value="'+(c.brandColor||"#8f2129")+'" style="width:60px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--soft)">'
+      +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Font</label><select id="cf_font" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
+      +['serif|Classic Serif','playfair|Playfair (elegant)','cinzel|Cinzel (luxury)','montserrat|Montserrat (modern)','sans|Clean Sans'].map(function(o){var p=o.split("|");return '<option value="'+p[0]+'"'+((c.font||"serif")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select'
       +fld("Phones (comma separated)","cf_phones",(c.phones||[]).join(", "))
       +fld("Email","cf_email",c.email)+fld("Website","cf_website",c.website)
       +fld("Address","cf_address",c.address)+fld("Brokerage / license line","cf_broker",c.brokerageLine)
@@ -1153,7 +1169,7 @@
     var g=function(id){return (document.getElementById(id)||{}).value||""};
     var card={ slug:curCard&&curCard.slug, name:g("cf_name"),
       titleLines:g("cf_titles").split("\n").map(function(x){return x.trim()}).filter(Boolean),
-      company:g("cf_company"), brandColor:g("cf_color"),
+      company:g("cf_company"), brandColor:g("cf_color"), font:g("cf_font"),
       phones:g("cf_phones").split(",").map(function(x){return x.trim()}).filter(Boolean),
       email:g("cf_email"), website:g("cf_website"), address:g("cf_address"), brokerageLine:g("cf_broker"),
       photoUrl:curCard._photo||"", logoUrl:curCard._logo||"",
@@ -1190,6 +1206,30 @@
       .then(function(){ renderInbox(); });
   });
   renderInbox();
+
+  // ---- Reports ----
+  var rpPeriod="week";
+  document.getElementById("rpPeriod").innerHTML=["day|Daily","week|Weekly","month|Monthly"].map(function(o){var p=o.split("|");return '<button class="btn" data-rp="'+p[0]+'" style="padding:7px 13px">'+p[1]+'</button>';}).join("");
+  function paintRp(){ document.querySelectorAll("[data-rp]").forEach(function(b){ b.className="btn "+(b.getAttribute("data-rp")===rpPeriod?"btn-approve":"btn-edit"); }); }
+  function loadReport(){
+    paintRp();
+    fetch(API+"/api/report?period="+rpPeriod).then(function(r){return r.json()}).then(function(d){
+      document.getElementById("rpKpis").innerHTML=
+        '<div class="kpi"><div class="label">Leads ('+d.period+')</div><div class="val">'+d.leads.total+'</div><div class="chg flat">'+d.leads.allTime+' all-time</div></div>'
+        +'<div class="kpi"><div class="label">Keywords climbing</div><div class="val">'+d.seo.improving+'</div><div class="chg '+(d.seo.declining>d.seo.improving?"down":"up")+'">'+d.seo.declining+' slipping</div></div>'
+        +'<div class="kpi"><div class="label">Agent posts ready</div><div class="val">'+d.content.agentPosts+'</div><div class="chg flat">in queue</div></div>'
+        +'<div class="kpi"><div class="label">Ads generated</div><div class="val">'+d.content.adsGenerated+'</div><div class="chg flat">this '+d.period+'</div></div>';
+      document.getElementById("rpRecs").innerHTML=(d.recommendations||[]).map(function(r){return '<div>→ '+esc(r)+'</div>'}).join("");
+      var src=Object.entries(d.leads.bySource||{});
+      document.getElementById("rpSources").innerHTML=src.length?src.map(function(kv){return '<div class="qcard" style="padding:9px 15px;display:flex;justify-content:space-between"><span>'+esc(kv[0])+'</span><b>'+kv[1]+'</b></div>'}).join(""):'<div class="muted">No leads captured this period yet.</div>';
+      document.getElementById("rpSeo").innerHTML=(d.seo.moves||[]).length?d.seo.moves.map(function(m){
+        var mv=m.now&&m.was?(m.now<m.was?'<span style="color:var(--green)">▲ +'+(m.was-m.now)+'</span>':m.now>m.was?'<span style="color:var(--red)">▼ -'+(m.now-m.was)+'</span>':'—'):(m.now?'<span style="color:var(--green)">▲ new</span>':'baseline');
+        return '<div class="qcard" style="padding:9px 15px;display:flex;align-items:center;gap:10px"><span style="flex:1">'+esc(m.keyword)+'</span><b style="color:'+(m.now?"var(--green)":"var(--red)")+'">'+(m.now?"#"+m.now:"not top 10")+'</b><span style="min-width:60px;text-align:right">'+mv+'</span></div>';
+      }).join(""):'<div class="muted">Run a rank scan on the SEO Plan page first.</div>';
+    }).catch(function(){});
+  }
+  document.getElementById("rpPeriod").addEventListener("click",function(e){ var b=e.target.closest("[data-rp]"); if(!b)return; rpPeriod=b.getAttribute("data-rp"); loadReport(); });
+  loadReport();
 
   renderSeo(); renderService();
   renderCreate();

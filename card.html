@@ -51,8 +51,11 @@
     var web=c.website?'<a class="btn" href="'+esc(c.website)+'"><span class="ic" style="color:'+burg+'">🌐</span> '+esc(c.website.replace(/^https?:\/\//,""))+'</a>':'';
     var addr=c.address?'<a class="btn" href="https://maps.google.com/?q='+encodeURIComponent(c.address)+'"><span class="ic" style="color:'+burg+'">📍</span> '+esc(c.address)+'</a>':'';
     var socials=(c.socials||[]).filter(function(s){return s.url}).map(function(s){return '<a href="'+esc(s.url)+'" style="border-color:'+burg+';color:'+burg+'">'+(SOC[s.type]||s.type[0].toUpperCase())+'</a>'}).join("");
+    var topbg = c.headerStyle==="solid" ? burg
+              : c.headerStyle==="dark" ? 'linear-gradient(160deg,#2a2320,#161210)'
+              : 'linear-gradient(160deg,'+burg+'dd,'+burg+')';
     document.getElementById("card").innerHTML=
-      '<div class="top" style="background:linear-gradient(160deg,'+burg+'dd,'+burg+')">'+logo+photo
+      '<div class="top" style="background:'+topbg+'">'+logo+photo
       +'<div class="name">'+esc(c.name)+'</div><div class="tl">'+tl+'</div>'
       +(c.company?'<div class="company">'+esc(c.company)+'</div>':'')+'</div>'
       +'<div class="body"><a class="btn save" id="vc" href="#" style="background:'+burg+'"><span class="ic">↓</span> Save to Contacts</a>'

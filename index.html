@@ -1286,14 +1286,17 @@
     curCard=c;
     var soc={}; (c.socials||[]).forEach(function(s){soc[s.type]=s.url;});
     document.getElementById("cardForm").innerHTML=
-      fld("Name","cf_name",c.name,"Anita Rich")
+      '<div style="font-size:11px;font-weight:600;color:var(--grey);margin-bottom:5px">QUICK THEMES</div><div id="cf_themes" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>'
+      +fld("Name","cf_name",c.name,"Anita Rich")
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Title lines (one per line)</label><textarea id="cf_titles" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft);min-height:52px">'+((c.titleLines||[]).join("\n"))+'</textarea>'
       +fld("Company","cf_company",c.company)
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Brand color</label><input type="color" id="cf_color" value="'+(c.brandColor||"#8f2129")+'" style="width:60px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--soft)">'
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Font</label><select id="cf_font" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
       +['serif|Classic Serif','playfair|Playfair (elegant)','cinzel|Cinzel (luxury)','montserrat|Montserrat (modern)','sans|Clean Sans'].map(function(o){var p=o.split("|");return '<option value="'+p[0]+'"'+((c.font||"serif")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select'
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Font size</label><select id="cf_fontscale" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
-      +[['','Normal'],['92%','Small'],['108%','Large'],['118%','Extra large']].map(function(p){return '<option value="'+p[0]+'"'+((c.fontScale||"")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select'
+      +[['','Normal'],['92%','Small'],['108%','Large'],['118%','Extra large']].map(function(p){return '<option value="'+p[0]+'"'+((c.fontScale||"")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select>'
+      +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Header style</label><select id="cf_header" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
+      +[['','Gradient (brand)'],['solid','Solid brand'],['dark','Dark luxe']].map(function(p){return '<option value="'+p[0]+'"'+((c.headerStyle||"")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select>'
       +fld("Phones (comma separated)","cf_phones",(c.phones||[]).join(", "))
       +fld("Email","cf_email",c.email)+fld("Website","cf_website",c.website)
       +fld("Address","cf_address",c.address)+fld("Brokerage / license line","cf_broker",c.brokerageLine)
@@ -1305,6 +1308,10 @@
     c._photo=c.photoUrl||""; c._logo=c.logoUrl||"";
     document.getElementById("cf_photo").addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){c._photo=rd.result;};rd.readAsDataURL(f);});
     document.getElementById("cf_logo").addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){c._logo=rd.result;};rd.readAsDataURL(f);});
+    var THEMES=[["Burgundy","#8f2129","serif",""],["Navy","#1f3a5f","montserrat",""],["Black","#1c1c1c","sans","dark"],["Gold","#a5822f","cinzel","dark"],["Emerald","#14543f","playfair",""]];
+    document.getElementById("cf_themes").innerHTML=THEMES.map(function(t,i){return '<button class="btn btn-edit" data-theme="'+i+'" style="padding:6px 12px;font-size:12px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+t[1]+';margin-right:6px;vertical-align:middle"></span>'+t[0]+'</button>';}).join("");
+    document.getElementById("cf_themes").addEventListener("click",function(e){ var b=e.target.closest("[data-theme]"); if(!b)return; var t=THEMES[Number(b.getAttribute("data-theme"))];
+      document.getElementById("cf_color").value=t[1]; document.getElementById("cf_font").value=t[2]; document.getElementById("cf_header").value=t[3]; });
     document.getElementById("cf_photoGal").addEventListener("click",function(){
       var box=document.getElementById("cf_galpick");
       if(box.style.display==="flex"){ box.style.display="none"; return; }
@@ -1337,7 +1344,7 @@
     var g=function(id){return (document.getElementById(id)||{}).value||""};
     var card={ slug:curCard&&curCard.slug, name:g("cf_name"),
       titleLines:g("cf_titles").split("\n").map(function(x){return x.trim()}).filter(Boolean),
-      company:g("cf_company"), brandColor:g("cf_color"), font:g("cf_font"), fontScale:g("cf_fontscale"),
+      company:g("cf_company"), brandColor:g("cf_color"), font:g("cf_font"), fontScale:g("cf_fontscale"), headerStyle:g("cf_header"),
       phones:g("cf_phones").split(",").map(function(x){return x.trim()}).filter(Boolean),
       email:g("cf_email"), website:g("cf_website"), address:g("cf_address"), brokerageLine:g("cf_broker"),
       photoUrl:curCard._photo||"", logoUrl:curCard._logo||"",

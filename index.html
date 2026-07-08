@@ -113,6 +113,17 @@
   .banner .bigdot{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(43,179,163,.2)}
   .banner b{color:var(--navy)}
   .muted{font-size:12px;color:var(--grey)}
+  #reqModal{position:fixed;inset:0;z-index:60;background:rgba(15,25,40,.55);display:none;align-items:center;justify-content:center;padding:20px}
+  #reqModal.show{display:flex}
+  .reqCard{background:#fff;border-radius:16px;padding:26px;width:460px;max-width:94vw;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+  .reqCard h3{color:var(--navy);font-size:18px;margin-bottom:4px}
+  .reqCard .rs{font-size:13px;color:var(--grey);margin-bottom:16px}
+  .reqCard label{display:block;font-size:12px;font-weight:600;color:var(--grey);margin:12px 0 5px}
+  .reqCard select,.reqCard textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft);font-family:inherit}
+  .reqCard textarea{resize:vertical;min-height:90px}
+  .reqRow{display:flex;gap:9px;margin-top:18px}
+  .reqReq{width:100%;text-align:left;background:none;border:0;color:#c6d6e8;padding:11px 14px;border-radius:9px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:11px}
+  .reqReq:hover{background:rgba(255,255,255,.07);color:#fff}
   @media(max-width:880px){.sidebar{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.addons{grid-template-columns:1fr}}
 </style>
 </head>
@@ -154,6 +165,9 @@
         <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
         <button data-p="settings"><span class="ic">⚙</span> Settings</button>
       </nav>
+      <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.08)">
+        <button class="reqReq" id="openReq"><span class="ic">✉</span> Request a change</button>
+      </div>
       <div class="sidefoot">Pilot tenant: The Rich Group<br><span id="logout" style="cursor:pointer;color:#c6d6e8;text-decoration:underline">Sign out</span></div>
     </aside>
 
@@ -405,6 +419,30 @@
 
 <script src="/content/config.js"></script>
 <script src="/content/campaign.js"></script>
+<div id="reqModal">
+  <div class="reqCard">
+    <h3>Request a change</h3>
+    <div class="rs">Tell Steve's Dev &amp; Data what you'd like added, updated, or built — we'll take care of it.</div>
+    <label>What kind of request?</label>
+    <select id="reqCat">
+      <option>New app or tool</option>
+      <option>Digital business card (Blinq-style)</option>
+      <option>Headshots / photos</option>
+      <option>Website update</option>
+      <option>A post or content</option>
+      <option>Fix something</option>
+      <option>General / other</option>
+    </select>
+    <label>Details</label>
+    <textarea id="reqMsg" placeholder="e.g. Set up a Blinq-style digital business card · Build me a new landing page · Set up professional headshots · Update my bio on the website"></textarea>
+    <div class="reqRow">
+      <button class="btn btn-approve" id="reqSend" style="flex:1;padding:12px">Send request</button>
+      <button class="btn btn-edit" id="reqCancel" style="padding:12px 18px">Cancel</button>
+    </div>
+    <div class="muted" id="reqStatus" style="margin-top:10px"></div>
+  </div>
+</div>
+
 <script>
 (function(){
   // When served from Vercel (static), API calls go to the LAN engines via the tunnel.
@@ -871,6 +909,28 @@
     var n=parseInt(e.key,10);
     if(n>=1&&n<=order.length){ var btn=document.querySelector('[data-p="'+order[n-1]+'"]'); if(btn)btn.click(); }
     if(e.key==="g"){ var b2=document.querySelector('[data-p="create"]'); if(b2)b2.click(); }
+  });
+
+  // ---- Request a change ----
+  var reqM=document.getElementById("reqModal");
+  document.getElementById("openReq").addEventListener("click",function(){ reqM.classList.add("show"); document.getElementById("reqStatus").textContent=""; });
+  document.getElementById("reqCancel").addEventListener("click",function(){ reqM.classList.remove("show"); });
+  reqM.addEventListener("click",function(e){ if(e.target===reqM) reqM.classList.remove("show"); });
+  document.getElementById("reqSend").addEventListener("click",function(){
+    var msg=document.getElementById("reqMsg").value.trim();
+    var st=document.getElementById("reqStatus");
+    if(!msg){ st.textContent="Please add a few details."; return; }
+    st.textContent="Sending…";
+    fetch(API+"/api/request",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({category:document.getElementById("reqCat").value,message:msg})})
+      .then(function(r){return r.json()})
+      .then(function(d){
+        if(d.ok){ st.style.color="var(--green)"; st.textContent="✅ Sent! Steve's Dev & Data will take it from here.";
+          document.getElementById("reqMsg").value="";
+          setTimeout(function(){ reqM.classList.remove("show"); st.style.color=""; },1600);
+        } else { st.textContent="Hmm — "+(d.error||"try again"); }
+      })
+      .catch(function(){ st.textContent="Couldn't send — check connection and try again."; });
   });
 
   renderSeo(); renderService();

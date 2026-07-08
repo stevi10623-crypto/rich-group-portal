@@ -145,6 +145,7 @@
       </div>
       <nav class="nav" id="nav">
         <button data-p="dash" class="active"><span class="ic">▣</span> Dashboard</button>
+        <button data-p="create"><span class="ic">✦</span> Create Post</button>
         <button data-p="queue"><span class="ic">✎</span> Approval Queue <span class="badge" id="qbadge">4</span></button>
         <button data-p="content"><span class="ic">▤</span> Content</button>
         <button data-p="reviews"><span class="ic">★</span> Reviews</button>
@@ -200,6 +201,35 @@
                 <div>🟠 Address mismatch on Yelp (old Sherman Oaks)</div>
                 <div>🟢 Blog post #1 drafted &amp; ready</div>
                 <div>🟢 6 client review requests queued</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="create">
+          <div class="section" style="margin-top:0">
+            <h2>Create Post</h2>
+            <div class="desc">Generate on-brand copy + imagery in seconds. Everything lands in the Approval Queue — nothing publishes without approval.</div>
+            <div class="row">
+              <div class="col">
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:6px">POST TYPE</div>
+                <div id="ptypes" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:6px">WHAT'S IT ABOUT?</div>
+                <textarea id="brief" rows="3" placeholder="e.g. Open house at 3094 Stephanie Blvd this Sunday 1–4pm, $2.15M, chef kitchen and pool" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:13.5px;background:var(--soft);resize:vertical;font-family:inherit"></textarea>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin:14px 0 6px">PLATFORMS</div>
+                <div id="plats" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:6px">IMAGE</div>
+                <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px" id="imgmode"></div>
+                <div class="muted" id="imgnote" style="margin-bottom:14px">Listing posts should use the real property photo — AI scenes are for market updates &amp; neighborhood posts.</div>
+                <input type="file" id="photoUpload" accept="image/*" style="display:none">
+                <button class="btn btn-approve" id="genBtn" style="width:100%;padding:12px">✦ Generate</button>
+                <div class="muted" id="genStatus" style="margin-top:9px"></div>
+              </div>
+              <div class="col">
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:6px">PREVIEW</div>
+                <div id="pvImage" style="border:1px solid var(--line);border-radius:12px;background:var(--soft);min-height:180px;display:flex;align-items:center;justify-content:center;color:#9aa6b4;font-size:13px;overflow:hidden;margin-bottom:12px">Image preview</div>
+                <div id="pvCaptions"></div>
+                <button class="btn btn-edit" id="queueBtn" style="width:100%;padding:11px;display:none">➜ Send to Approval Queue</button>
               </div>
             </div>
           </div>
@@ -264,6 +294,7 @@
     </div>
   </div>
 
+<script src="/content/campaign.js"></script>
 <script>
 (function(){
   // ---- login ----
@@ -276,11 +307,12 @@
   var KEY="sdd_portal_v2";
   var state=JSON.parse(localStorage.getItem(KEY)||"{}");
   state.queue=state.queue||{};
+  state.items=state.items||[];   // user-generated queue items (from Create Post / review replies)
   state.addons=state.addons||{funnels:false,ads:false,podcast:false,avatar:false,assistant:false,reactivation:false};
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",queue:"Approval Queue",content:"Content",reviews:"Reviews",addons:"Add-ons",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",content:"Content",reviews:"Reviews",addons:"Add-ons",settings:"Settings"};
   document.getElementById("nav").addEventListener("click",function(e){
     var b=e.target.closest("button"); if(!b)return;
     document.querySelectorAll(".nav button").forEach(function(x){x.classList.remove("active")});
@@ -291,39 +323,68 @@
     document.getElementById("pageTitle").textContent=titles[pg];
   });
 
-  // ---- queue ----
-  var QUEUE=[
-    {id:"q1",tag:"t-blog",label:"Blog",ttl:"Sherman Oaks Housing Market Update — Q3 2026",when:"drafted today",body:"As of mid-2026, the median single-family home in Sherman Oaks is selling in the $1.45M–$1.6M range… [full 700-word post ready, MLS figures flagged for your confirmation]"},
-    {id:"q2",tag:"t-gbp",label:"Google Post",ttl:"Just Sold in Studio City 🏡",when:"drafted today",body:"Another happy family moved on to their next chapter! Thinking of selling? With 30+ years in the Valley, The Rich Group gets it done. Call (818) 632-2258."},
-    {id:"q3",tag:"t-social",label:"Instagram",ttl:"Reel caption — 3 reasons buyers love Valley Village",when:"drafted today",body:"Tree-lined streets, walkable charm, and real value vs. the hills. Here are 3 reasons buyers keep choosing Valley Village 👇 #valleyvillage #sfvrealestate"},
-    {id:"q4",tag:"t-review",label:"Review Reply",ttl:"Reply to Maria S. (5★ Google)",when:"new review",body:"Thank you so much, Maria! It was a joy helping you sell your Sherman Oaks home. Wishing you all the best in this next chapter. — Anita"}
-  ];
+  // ---- queue (real campaign content + server-side agent drafts) ----
+  var QUEUE=(window.CAMPAIGN&&window.CAMPAIGN.queue)||[];
+  var SERVER_DRAFTS=[];
+  function loadServerDrafts(){
+    fetch("/api/drafts").then(function(r){return r.json()}).then(function(d){
+      SERVER_DRAFTS=d.drafts||[]; renderQueue();
+    }).catch(function(){});
+  }
+  function esc(s){ var d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
   function renderQueue(){
     var list=document.getElementById("queueList"); list.innerHTML="";
     var pending=0;
-    QUEUE.forEach(function(item){
+    var all = SERVER_DRAFTS.concat(state.items, QUEUE);
+    all.forEach(function(item){
       var st=state.queue[item.id];
       if(!st)pending++;
       var div=document.createElement("div");
       div.className="qcard"+(st?" done":"");
+      var statusHtml = st==="scheduled" ? "✓ Approved & scheduled"
+                     : st==="published" ? "✓ Approved — sent to publisher"
+                     : st==="staged"    ? "✓ Approved — queued to publish (publisher offline)"
+                     : "✕ Rejected";
       var actions = st
-        ? '<span class="status-pill '+(st==="scheduled"?"sp-sched":"sp-rej")+'">'+(st==="scheduled"?"✓ Approved & scheduled":"✕ Rejected")+'</span>'
-        : '<button class="btn btn-approve" data-act="scheduled" data-id="'+item.id+'">Approve</button>'
-         +'<button class="btn btn-edit" data-id="'+item.id+'">Edit</button>'
+        ? '<span class="status-pill '+(st==="rejected"?"sp-rej":"sp-sched")+'">'+statusHtml+'</span>'
+        : '<button class="btn btn-approve" data-act="approve" data-id="'+item.id+'">'+(item.publish?"Approve & Publish":"Approve")+'</button>'
+         +'<button class="btn btn-edit" data-edit="'+item.id+'">Edit</button>'
          +'<button class="btn btn-reject" data-act="rejected" data-id="'+item.id+'">Reject</button>';
-      div.innerHTML='<div class="qhead"><span class="tag '+item.tag+'">'+item.label+'</span>'
-        +'<span class="ttl">'+item.ttl+'</span><span class="when">'+item.when+'</span></div>'
-        +'<div class="qbody">'+item.body+'</div>'
+      div.innerHTML='<div class="qhead"><span class="tag '+item.tag+'">'+esc(item.label)+'</span>'
+        +'<span class="ttl">'+esc(item.ttl)+'</span><span class="when">'+esc(item.when)+'</span></div>'
+        +(item.image?'<img src="'+item.image+'" style="max-width:280px;border-radius:9px;margin-bottom:10px;display:block">':'')
+        +'<div class="qbody" id="qb-'+item.id+'">'+esc(item.body)+'</div>'
         +'<div class="qactions">'+actions+'</div>';
       list.appendChild(div);
     });
     var bd=document.getElementById("qbadge");
     bd.textContent=pending; bd.style.display=pending?"inline-block":"none";
   }
+  function findItem(id){ return SERVER_DRAFTS.concat(state.items, QUEUE).find(function(x){return x.id===id}); }
   document.getElementById("queueList").addEventListener("click",function(e){
     var b=e.target.closest("button[data-act]");
-    if(b){ state.queue[b.getAttribute("data-id")]=b.getAttribute("data-act"); save(); renderQueue(); return; }
-    if(e.target.closest(".btn-edit")){ alert("In the live app this opens an inline editor to tweak the copy before approving."); }
+    if(b){
+      var id=b.getAttribute("data-id"), act=b.getAttribute("data-act"), item=findItem(id);
+      if(String(id).indexOf("agent_")===0){ fetch("/api/drafts?id="+id,{method:"DELETE"}).catch(function(){}); }
+      if(act==="approve"){
+        if(item && item.publish){
+          state.queue[id]="staged"; save(); renderQueue();
+          fetch("/api/publish",{method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({caption:item.body,platforms:item.platforms||["facebook"]})})
+            .then(function(r){return r.json()})
+            .then(function(d){ state.queue[id]=d.staged?"staged":"published"; save(); renderQueue(); })
+            .catch(function(){ /* stays staged */ });
+        } else { state.queue[id]="scheduled"; save(); renderQueue(); }
+      } else { state.queue[id]=act; save(); renderQueue(); }
+      return;
+    }
+    var ed=e.target.closest("button[data-edit]");
+    if(ed){
+      var id2=ed.getAttribute("data-edit"), item2=findItem(id2);
+      var cur=item2?item2.body:"";
+      var next=prompt("Edit the copy before approving:",cur);
+      if(next!==null && item2){ item2.body=next; if(state.items.some(function(x){return x.id===id2})) save(); renderQueue(); }
+    }
   });
 
   // ---- addons ----
@@ -352,10 +413,144 @@
   });
 
   document.querySelectorAll(".rev .reply").forEach(function(r){
-    r.addEventListener("click",function(){ alert("In the live app this generates a professional draft reply and drops it into your Approval Queue."); });
+    r.addEventListener("click",function(){
+      var card=r.closest(".rev");
+      var name=card.querySelector(".name").textContent;
+      var txt=card.querySelector(".txt").textContent;
+      r.textContent="Drafting…";
+      fetch("/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({kind:"review_reply",brief:"Reply to this review from "+name+": "+txt})})
+        .then(function(x){return x.json()})
+        .then(function(d){
+          if(d.error){ r.textContent="↳ Draft a reply (error — try again)"; return; }
+          state.items.unshift({id:"u"+Date.now(),tag:"t-review",label:"Review Reply",publish:false,
+            ttl:"Reply to "+name,when:"drafted just now",body:d.text});
+          save(); renderQueue(); r.textContent="✓ Draft in Approval Queue";
+        })
+        .catch(function(){ r.textContent="↳ Draft a reply (error — try again)"; });
+    });
   });
 
-  renderQueue(); renderAddons();
+  // ---- Create Post ----
+  var PTYPES=[
+    {k:"new_listing",n:"New Listing",img:"photo"},
+    {k:"just_sold",n:"Just Sold",img:"photo"},
+    {k:"open_house",n:"Open House",img:"photo"},
+    {k:"market_update",n:"Market Update",img:"ai"},
+    {k:"neighborhood",n:"Neighborhood Spotlight",img:"ai"},
+    {k:"tip",n:"Buyer/Seller Tip",img:"ai"}
+  ];
+  var PLATS=[{k:"facebook",n:"Facebook"},{k:"instagram",n:"Instagram"},{k:"tiktok",n:"TikTok"},{k:"gbp",n:"Google Post"}];
+  var sel={ptype:"market_update",plats:{facebook:true,instagram:true},imgmode:"ai",photo:null,gen:null};
+
+  function chip(txt,on){ return '<button class="btn '+(on?"btn-approve":"btn-edit")+'" style="padding:7px 13px">'+txt+'</button>'; }
+  function renderCreate(){
+    var pt=document.getElementById("ptypes");
+    pt.innerHTML=PTYPES.map(function(p){return '<span data-pt="'+p.k+'">'+chip(p.n,sel.ptype===p.k)+'</span>'}).join("");
+    var pl=document.getElementById("plats");
+    pl.innerHTML=PLATS.map(function(p){return '<span data-pl="'+p.k+'">'+chip(p.n,!!sel.plats[p.k])+'</span>'}).join("");
+    var isPhoto=(PTYPES.find(function(p){return p.k===sel.ptype})||{}).img==="photo";
+    var im=document.getElementById("imgmode");
+    im.innerHTML='<span data-im="ai">'+chip("AI scene (13s)",sel.imgmode==="ai")+'</span>'
+                +'<span data-im="photo">'+chip("Upload real photo",sel.imgmode==="photo")+'</span>'
+                +'<span data-im="none">'+chip("No image",sel.imgmode==="none")+'</span>';
+    document.getElementById("imgnote").textContent = isPhoto
+      ? "This is a property post — use the REAL house photo. AI scenes are for market/neighborhood content."
+      : "AI scene recommended for day-to-day posts.";
+  }
+  document.getElementById("ptypes").addEventListener("click",function(e){
+    var t=e.target.closest("[data-pt]"); if(!t)return;
+    sel.ptype=t.getAttribute("data-pt");
+    var isPhoto=(PTYPES.find(function(p){return p.k===sel.ptype})||{}).img==="photo";
+    sel.imgmode=isPhoto?"photo":"ai";
+    renderCreate();
+  });
+  document.getElementById("plats").addEventListener("click",function(e){
+    var t=e.target.closest("[data-pl]"); if(!t)return;
+    var k=t.getAttribute("data-pl"); sel.plats[k]=!sel.plats[k]; renderCreate();
+  });
+  document.getElementById("imgmode").addEventListener("click",function(e){
+    var t=e.target.closest("[data-im]"); if(!t)return;
+    sel.imgmode=t.getAttribute("data-im");
+    if(sel.imgmode==="photo") document.getElementById("photoUpload").click();
+    renderCreate();
+  });
+  document.getElementById("photoUpload").addEventListener("change",function(e){
+    var f=e.target.files[0]; if(!f)return;
+    var rd=new FileReader();
+    rd.onload=function(){ sel.photo=rd.result;
+      document.getElementById("pvImage").innerHTML='<img src="'+sel.photo+'" style="width:100%;display:block">'; };
+    rd.readAsDataURL(f);
+  });
+
+  var busy=false;
+  document.getElementById("genBtn").addEventListener("click",function(){
+    if(busy)return;
+    var brief=document.getElementById("brief").value.trim();
+    if(!brief){ document.getElementById("genStatus").textContent="Tell it what the post is about first."; return; }
+    var plats=Object.keys(sel.plats).filter(function(k){return sel.plats[k]});
+    if(!plats.length){ document.getElementById("genStatus").textContent="Pick at least one platform."; return; }
+    busy=true; sel.gen={captions:{},image:sel.imgmode==="photo"?sel.photo:null};
+    var st=document.getElementById("genStatus"); st.textContent="Writing captions…";
+    document.getElementById("queueBtn").style.display="none";
+    var pv=document.getElementById("pvCaptions"); pv.innerHTML="";
+
+    var caps=Promise.all(plats.map(function(p){
+      return fetch("/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({kind:p,brief:brief})})
+        .then(function(r){return r.json()})
+        .then(function(d){ sel.gen.captions[p]=d.text||("[error: "+d.error+"]");
+          pv.innerHTML+='<div class="qcard" style="margin-bottom:10px"><div class="qhead"><span class="tag t-social">'+p+'</span></div><div class="qbody" style="white-space:pre-wrap">'+esc(sel.gen.captions[p])+'</div></div>'; });
+    }));
+
+    var img=Promise.resolve();
+    if(sel.imgmode==="ai"){
+      var t0=Date.now();
+      document.getElementById("pvImage").textContent="Rendering image…";
+      img=fetch("/api/image",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({brief:brief,aspect:"portrait",engine:"draft"})})
+        .then(function(r){return r.json()})
+        .then(function(d){
+          if(!d.promptId) throw new Error(d.error||"submit failed");
+          return new Promise(function(resolve,reject){
+            var iv=setInterval(function(){
+              document.getElementById("pvImage").textContent="Rendering image… "+Math.round((Date.now()-t0)/1000)+"s";
+              fetch("/api/image?promptId="+d.promptId+"&engine=draft").then(function(r){return r.json()}).then(function(x){
+                if(x.status==="done"){ clearInterval(iv); sel.gen.image=x.image;
+                  document.getElementById("pvImage").innerHTML='<img src="'+x.image+'" style="width:100%;display:block">'; resolve(); }
+                else if(x.status==="error"){ clearInterval(iv); document.getElementById("pvImage").textContent="Image failed — "+(x.error||""); resolve(); }
+              }).catch(function(){});
+            },2500);
+          });
+        })
+        .catch(function(e){ document.getElementById("pvImage").textContent="Image failed: "+e.message; });
+    }
+    Promise.all([caps,img]).then(function(){
+      busy=false; st.textContent="Done. Review the preview, then send it to the Approval Queue.";
+      document.getElementById("queueBtn").style.display="block";
+    });
+  });
+
+  document.getElementById("queueBtn").addEventListener("click",function(){
+    var plats=Object.keys(sel.gen.captions);
+    plats.forEach(function(p){
+      state.items.unshift({
+        id:"u"+Date.now()+"_"+p, tag: p==="gbp"?"t-gbp":"t-social",
+        label: p==="gbp"?"Google Post":p.charAt(0).toUpperCase()+p.slice(1),
+        publish: p!=="gbp", platforms:[p],
+        ttl: (PTYPES.find(function(x){return x.k===sel.ptype})||{}).n+" — "+document.getElementById("brief").value.slice(0,60),
+        when: "drafted just now",
+        body: sel.gen.captions[p],
+        image: sel.gen.image||null
+      });
+    });
+    save(); renderQueue();
+    document.getElementById("genStatus").textContent="✓ Sent to Approval Queue ("+plats.length+" item"+(plats.length>1?"s":"")+")";
+    document.getElementById("queueBtn").style.display="none";
+  });
+
+  renderCreate();
+  renderQueue(); renderAddons(); loadServerDrafts();
 })();
 </script>
 </body>

@@ -170,6 +170,7 @@
         <button data-p="headshot"><span class="ic">☺</span> Headshot Studio</button>
         <button data-p="card"><span class="ic">▭</span> Digital Card</button>
         <button data-p="inbox"><span class="ic">✉</span> Requests <span class="badge" id="inboxBadge" style="display:none">0</span></button>
+        <button data-p="social"><span class="ic">⇄</span> Auto-Post Setup</button>
         <button data-p="settings"><span class="ic">⚙</span> Settings</button>
       </nav>
       <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.08)">
@@ -540,6 +541,30 @@
           </div>
         </section>
 
+        <section class="page" id="social">
+          <div class="section" style="margin-top:0">
+            <h2>Connect your accounts</h2>
+            <div class="desc">Connect Facebook, Instagram, Google &amp; TikTok so approved posts can publish automatically. (Connection is set up by Steve's Dev &amp; Data via your Postiz account.)</div>
+            <div id="socConnect" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+          </div>
+          <div class="section">
+            <h2>Auto-post</h2>
+            <div class="desc">When ON, every post you Approve in the queue is automatically scheduled &amp; published on the cadence below. When OFF, approving just keeps it as a draft.</div>
+            <label style="display:flex;align-items:center;gap:10px;margin:10px 0;font-size:14px"><span class="sw" id="autoSw"></span> <span id="autoLbl">Auto-post is OFF</span></label>
+            <div class="row">
+              <div class="col"><div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Posts per week</div>
+                <input type="number" id="socPerWeek" min="1" max="14" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--soft)"></div>
+              <div class="col"><div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Time of day</div>
+                <input type="time" id="socTime" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--soft)"></div>
+            </div>
+            <div style="font-size:12px;font-weight:600;color:var(--grey);margin:12px 0 5px">Where to post</div>
+            <div id="socPlats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+            <button class="btn btn-approve" id="socSave" style="padding:11px 20px">Save settings</button>
+            <span class="muted" id="socMsg" style="margin-left:10px"></span>
+          </div>
+          <div class="section"><h2>Scheduled</h2><div id="socScheduled"></div></div>
+        </section>
+
         <section class="page" id="settings">
           <div class="section" style="margin-top:0">
             <h2>Agent settings</h2>
@@ -606,7 +631,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",seo:"4",content:"5",reviews:"6",addons:"7"};
@@ -678,7 +703,12 @@
             .then(function(r){return r.json()})
             .then(function(d){ state.queue[id]=d.staged?"staged":"published"; save(); renderQueue(); })
             .catch(function(){ /* stays staged */ });
-        } else { state.queue[id]="scheduled"; save(); renderQueue(); }
+        } else {
+          state.queue[id]="scheduled"; save(); renderQueue();
+          if(socSettings && socSettings.autoPost){
+            fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"schedule",post:{body:(item&&item.body)||""}})}).catch(function(){});
+          }
+        }
       } else { state.queue[id]=act; save(); renderQueue(); }
       return;
     }
@@ -1238,6 +1268,38 @@
     var link=cardOrigin()+"/c?slug="+slug; navigator.clipboard.writeText(link); document.getElementById("cardMsg").textContent="Copied: "+link;
   });
   loadCards();
+
+  // ---- Social / Auto-post ----
+  var SOC_PLATS=["facebook","instagram","google","tiktok"];
+  var socSettings={};
+  function renderSocial(d){
+    socSettings=d.settings||{};
+    var conn=socSettings.connected||{};
+    document.getElementById("socConnect").innerHTML=SOC_PLATS.map(function(p){
+      var on=conn[p]; return '<button class="btn '+(on?"btn-approve":"btn-edit")+'" data-conn="'+p+'" style="padding:10px 16px;text-transform:capitalize">'+(on?"✓ ":"")+p+(on?" connected":" — connect")+'</button>';
+    }).join("");
+    var sw=document.getElementById("autoSw"); sw.className="sw"+(socSettings.autoPost?" on":"");
+    document.getElementById("autoLbl").textContent="Auto-post is "+(socSettings.autoPost?"ON":"OFF");
+    document.getElementById("socPerWeek").value=socSettings.perWeek||3;
+    document.getElementById("socTime").value=socSettings.timeOfDay||"09:00";
+    var pl=socSettings.platforms||[];
+    document.getElementById("socPlats").innerHTML=SOC_PLATS.map(function(p){return '<button class="btn '+(pl.indexOf(p)>-1?"btn-approve":"btn-edit")+'" data-splat="'+p+'" style="padding:7px 13px;text-transform:capitalize">'+p+'</button>'}).join("");
+    var sc=d.scheduled||[];
+    document.getElementById("socScheduled").innerHTML=sc.length?sc.map(function(x){return '<div class="qcard" style="padding:9px 15px"><div class="qhead"><span class="when">'+new Date(x.at).toLocaleString()+'</span><span class="pill">'+(x.platforms||[]).join(", ")+'</span></div><div class="qbody">'+esc(x.body).slice(0,140)+'</div></div>'}).join(""):'<div class="muted">Nothing scheduled yet — approve a post with auto-post ON.</div>';
+  }
+  function loadSocial(){ fetch(API+"/api/social").then(function(r){return r.json()}).then(renderSocial).catch(function(){}); }
+  document.getElementById("social").addEventListener("click",function(e){
+    var c=e.target.closest("[data-conn]");
+    if(c){ var p=c.getAttribute("data-conn"); fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"connect",platform:p,on:!(socSettings.connected||{})[p]})}).then(function(r){return r.json()}).then(function(d){renderSocial({settings:d.settings,scheduled:socSettings._sc||[]});loadSocial();}); return; }
+    if(e.target.id==="autoSw"){ socSettings.autoPost=!socSettings.autoPost; document.getElementById("autoSw").className="sw"+(socSettings.autoPost?" on":""); document.getElementById("autoLbl").textContent="Auto-post is "+(socSettings.autoPost?"ON":"OFF"); return; }
+    var sp=e.target.closest("[data-splat]");
+    if(sp){ var pp=sp.getAttribute("data-splat"); var arr=socSettings.platforms||[]; var i=arr.indexOf(pp); if(i>-1)arr.splice(i,1); else arr.push(pp); socSettings.platforms=arr; sp.className="btn "+(i>-1?"btn-edit":"btn-approve"); return; }
+  });
+  document.getElementById("socSave").addEventListener("click",function(){
+    fetch(API+"/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"settings",settings:{autoPost:socSettings.autoPost,perWeek:Number(document.getElementById("socPerWeek").value)||3,timeOfDay:document.getElementById("socTime").value,platforms:socSettings.platforms}})})
+      .then(function(){ document.getElementById("socMsg").textContent="✅ Saved"; setTimeout(function(){document.getElementById("socMsg").textContent="";},1500); loadSocial(); });
+  });
+  loadSocial();
 
   function renderInbox(){
     fetch(API+"/api/request").then(function(r){return r.json()}).then(function(d){

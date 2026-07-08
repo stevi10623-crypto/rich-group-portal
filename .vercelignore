@@ -1,0 +1,7 @@
+api/
+scripts/
+server.js
+portal-keeper.sh
+data/
+node_modules/
+*.log

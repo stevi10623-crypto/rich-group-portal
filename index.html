@@ -147,6 +147,7 @@
         <button data-p="dash" class="active"><span class="ic">▣</span> Dashboard</button>
         <button data-p="create"><span class="ic">✦</span> Create Post</button>
         <button data-p="queue"><span class="ic">✎</span> Approval Queue <span class="badge" id="qbadge">4</span></button>
+        <button data-p="seo"><span class="ic">⌖</span> SEO Plan</button>
         <button data-p="content"><span class="ic">▤</span> Content</button>
         <button data-p="reviews"><span class="ic">★</span> Reviews</button>
         <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
@@ -243,6 +244,59 @@
           </div>
         </section>
 
+        <section class="page" id="seo">
+          <div class="banner"><div class="bigdot"></div><div><b>Big finding:</b> <span class="muted" id="seoBigFinding"></span></div></div>
+
+          <div class="section" style="margin-top:0">
+            <h2>Keyword rankings — live</h2>
+            <div class="desc">Where therichgroup.la actually places in search results for the money keywords. Checked daily at 6 AM by the agent.<span id="rankWhen" class="muted"></span></div>
+            <div id="rankTable"></div>
+            <button class="btn btn-edit" id="rankBtn" style="margin-top:10px">↻ Check rankings now</button>
+          </div>
+
+          <div class="section">
+            <h2>The plan — priorities in order</h2>
+            <div class="desc">Work top to bottom. Priorities 1–2 are ~80% of the results, and both are free.</div>
+            <div id="seoPriorities"></div>
+          </div>
+
+          <div class="section">
+            <h2>Official business info (NAP) — use this everywhere</h2>
+            <div class="desc">Every listing must match character-for-character. Inconsistent NAP is why rankings suffer.</div>
+            <div id="seoNap" style="font-size:13.5px;line-height:2;color:#46505e"></div>
+          </div>
+
+          <div class="section">
+            <h2>Listings audit — what each site shows vs. the fix</h2>
+            <div class="desc">Check them off as they're corrected.</div>
+            <div id="seoListings"></div>
+          </div>
+
+          <div class="section">
+            <h2>Claim the Google Business Profile (highest priority)</h2>
+            <div class="desc">Needs Anita's own Google login — the steps, in order:</div>
+            <ol id="seoGbp" style="font-size:13.5px;line-height:2;color:#46505e;padding-left:20px"></ol>
+          </div>
+
+          <div class="section">
+            <h2>Page titles &amp; meta descriptions</h2>
+            <div class="desc">Paste into the matching Luxury Presence SEO fields (titles &lt;60 chars, descriptions &lt;155).</div>
+            <div id="seoMetas"></div>
+          </div>
+
+          <div class="section">
+            <h2>Homepage FAQ block</h2>
+            <div class="desc">The exact format Google and AI assistants (ChatGPT, Gemini, Perplexity) pull answers from.</div>
+            <div id="seoFaq"></div>
+          </div>
+
+          <div class="section">
+            <h2>Blog pipeline</h2>
+            <div class="desc">2 posts/month. Pick an idea — the AI drafts it into your Approval Queue.</div>
+            <div id="seoBlog"></div>
+          </div>
+        </section>
+
         <section class="page" id="content">
           <div class="section" style="margin-top:0">
             <h2>Content calendar</h2>
@@ -316,7 +370,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",content:"Content",reviews:"Reviews",addons:"Add-ons",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",content:"Content",reviews:"Reviews",addons:"Add-ons",settings:"Settings"};
   document.getElementById("nav").addEventListener("click",function(e){
     var b=e.target.closest("button"); if(!b)return;
     document.querySelectorAll(".nav button").forEach(function(x){x.classList.remove("active")});
@@ -553,6 +607,84 @@
     document.getElementById("queueBtn").style.display="none";
   });
 
+  // ---- SEO Plan ----
+  var C = window.CAMPAIGN || {};
+  state.nap = state.nap || {};
+  function copyBtn(text){ return '<button class="btn btn-edit" style="padding:4px 10px;font-size:11px" data-copy="'+encodeURIComponent(text)+'">Copy</button>'; }
+  function renderSeo(){
+    document.getElementById("seoBigFinding").textContent = C.bigFinding || "";
+    var pr=document.getElementById("seoPriorities");
+    pr.innerHTML=(C.priorities||[]).map(function(p){
+      return '<div class="qcard"><div class="qhead"><span class="tag t-blog">#'+p.n+'</span><span class="ttl">'+p.t+'</span><span class="when">'+p.when+'</span></div>'
+        +'<div class="qbody"><b>Why:</b> '+p.why+'<br><b>Do:</b> '+p.steps+'</div></div>';
+    }).join("");
+    var nap=C.nap||{};
+    document.getElementById("seoNap").innerHTML =
+      '<div><b>Business name:</b> '+nap.name+'</div><div><b>Address:</b> '+nap.address+'</div>'
+      +'<div><b>Primary phone:</b> '+nap.phone+'</div><div><b>Website:</b> '+nap.website+'</div>'
+      +'<div><b>DRE #:</b> '+nap.dre+'</div><div class="muted">'+ (nap.note||"") +'</div>';
+    var li=document.getElementById("seoListings");
+    li.innerHTML=(C.listingsAudit||[]).map(function(r,i){
+      var done=!!state.nap["fix"+i];
+      return '<div class="qcard'+(done?" done":"")+'" style="padding:12px 16px"><div class="qhead" style="margin-bottom:4px">'
+        +'<input type="checkbox" data-nap="fix'+i+'" '+(done?"checked":"")+' style="width:16px;height:16px;accent-color:var(--teal)">'
+        +'<span class="ttl">'+r.site+'</span></div>'
+        +'<div style="font-size:12.5px;color:#8a6d00;margin-left:26px">Now: '+r.now+'</div>'
+        +'<div style="font-size:12.5px;color:var(--green);margin-left:26px">Fix: '+r.action+'</div></div>';
+    }).join("");
+    document.getElementById("seoGbp").innerHTML=(C.gbpSteps||[]).map(function(x){return "<li>"+x+"</li>"}).join("");
+    document.getElementById("seoMetas").innerHTML=(C.metas||[]).map(function(m){
+      return '<div class="qcard" style="padding:12px 16px"><div class="qhead" style="margin-bottom:4px"><span class="tag t-gbp">'+m.page+'</span>'
+        +'<span class="ttl" style="font-size:13px">'+m.title+'</span>'+copyBtn(m.title)+'</div>'
+        +'<div style="font-size:12.5px;color:#46505e;display:flex;gap:8px;align-items:center">'+m.desc+' '+copyBtn(m.desc)+'</div></div>';
+    }).join("");
+    document.getElementById("seoFaq").innerHTML=(C.faq||[]).map(function(f){
+      return '<div class="qcard" style="padding:12px 16px"><div class="qhead" style="margin-bottom:4px"><span class="ttl" style="font-size:13.5px">'+f.q+'</span>'+copyBtn(f.q+"\n"+f.a)+'</div>'
+        +'<div style="font-size:12.5px;color:#46505e">'+f.a+'</div></div>';
+    }).join("");
+    document.getElementById("seoBlog").innerHTML=(C.blogIdeas||[]).map(function(b,i){
+      return '<div class="qcard" style="padding:12px 16px;display:flex;align-items:center;gap:10px"><span class="ttl" style="flex:1;font-size:13.5px">'+b+'</span>'
+        +'<button class="btn btn-approve" data-blog="'+i+'" style="padding:6px 12px;font-size:12px">✦ Draft it</button></div>';
+    }).join("");
+  }
+  document.getElementById("seo").addEventListener("click",function(e){
+    var cb=e.target.closest("input[data-nap]");
+    if(cb){ state.nap[cb.getAttribute("data-nap")]=cb.checked; save(); renderSeo(); return; }
+    var cp=e.target.closest("button[data-copy]");
+    if(cp){ navigator.clipboard.writeText(decodeURIComponent(cp.getAttribute("data-copy"))); cp.textContent="Copied ✓"; setTimeout(function(){cp.textContent="Copy"},1200); return; }
+    var bl=e.target.closest("button[data-blog]");
+    if(bl){
+      var idea=(C.blogIdeas||[])[Number(bl.getAttribute("data-blog"))];
+      bl.textContent="Drafting…"; bl.disabled=true;
+      fetch(API+"/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({kind:"blog",brief:idea})})
+        .then(function(r){return r.json()})
+        .then(function(d){
+          if(d.error){ bl.textContent="Error — retry"; bl.disabled=false; return; }
+          state.items.unshift({id:"u"+Date.now(),tag:"t-blog",label:"Blog",publish:false,ttl:idea,when:"drafted just now",body:d.text});
+          save(); renderQueue(); bl.textContent="✓ In Approval Queue";
+        }).catch(function(){ bl.textContent="Error — retry"; bl.disabled=false; });
+    }
+  });
+  function renderRank(d){
+    var latest=d.latest; if(!latest){ document.getElementById("rankTable").innerHTML='<div class="muted">No checks yet — hit the button.</div>'; return; }
+    document.getElementById("rankWhen").textContent=" Last check: "+new Date(latest.at).toLocaleString();
+    document.getElementById("rankTable").innerHTML=latest.rows.map(function(r){
+      var pos=r.position?('<span style="color:var(--green);font-weight:700">#'+r.position+'</span>')
+                        :('<span style="color:var(--red);font-weight:700">not in top '+(r.checked||10)+'</span>');
+      return '<div class="qcard" style="padding:10px 16px;display:flex;align-items:center;gap:12px">'
+        +'<span class="ttl" style="flex:1;font-size:13.5px">'+r.keyword+'</span>'+pos+'</div>';
+    }).join("");
+  }
+  fetch(API+"/api/rank").then(function(r){return r.json()}).then(renderRank).catch(function(){});
+  document.getElementById("rankBtn").addEventListener("click",function(){
+    var b=this; b.textContent="Checking…"; b.disabled=true;
+    fetch(API+"/api/rank",{method:"POST"}).then(function(r){return r.json()})
+      .then(function(d){ renderRank({latest:d}); b.textContent="↻ Check rankings now"; b.disabled=false; })
+      .catch(function(){ b.textContent="↻ Check rankings now"; b.disabled=false; });
+  });
+
+  renderSeo();
   renderCreate();
   renderQueue(); renderAddons(); loadServerDrafts();
 })();

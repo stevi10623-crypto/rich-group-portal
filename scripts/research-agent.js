@@ -112,4 +112,7 @@ async function main() {
   console.log(`[${new Date().toISOString()}] deposited ${items.length} drafts -> ${DRAFTS}`);
 }
 
-main().catch((e) => { console.error("agent failed:", e.message); process.exit(1); });
+main()
+  .then(() => require(require("path").join(__dirname, "..", "api", "rank.js")).runCheck())
+  .then((r) => console.log(`rank check recorded (${r.rows.length} keywords)`))
+  .catch((e) => { console.error("agent failed:", e.message); process.exit(1); });

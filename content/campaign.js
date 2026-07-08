@@ -79,3 +79,42 @@ window.CAMPAIGN = {
     "First-Time Buyer's Guide to Valley Village Condos",
   ],
 };
+
+window.CAMPAIGN.priorities = [
+  { n: 1, t: "Google Business Profile + reviews", when: "this week", why: "Highest-ROI channel for a local agent — drives more calls than everything else combined. Free.", steps: "Claim/verify profile → complete 100% (ONE address, ONE phone, hours, service areas, categories, 10+ photos) → review push (2-4/month drip) → post 1-2x/month." },
+  { n: 2, t: "Fix business info (NAP) everywhere", when: "this week", why: "Google & AI assistants lower rankings when they can't confirm one consistent identity. Yelp still shows the old Sherman Oaks address; the footer click-to-call dials the wrong number.", steps: "Make every listing match the official record exactly (see NAP checklist below)." },
+  { n: 3, t: "Revive the blog with local content", when: "ongoing — 2 posts/month", why: "Newest post is May 2023. Fresh local market content is the strongest organic lever a realtor has.", steps: "One local keyword per post. Post #1 is written and in the Approval Queue." },
+  { n: 4, t: "On-page tune-ups", when: "a few hours, once", why: "Each key page should rank for its city + service.", steps: "Apply the titles & metas below in Luxury Presence; one clear H1 per page; alt text on photos; add the FAQ block." },
+  { n: 5, t: "AI-search readiness", when: "built into the above", why: "ChatGPT/Gemini/Perplexity cite well-reviewed, consistently-listed agents with clear Q&A content.", steps: "FAQ block + reviews + consistent listings; confirm robots.txt isn't blocking AI crawlers." },
+  { n: 6, t: "Local links & citations", when: "slow burn", why: "Authority signals.", steps: "Local directories, chamber, quotes to local outlets, partner links (stagers, lenders, escrow); keep the vlog active." },
+];
+
+window.CAMPAIGN.listingsAudit = [
+  { site: "Website footer", now: "Studio City address ✓, but click-to-call dials the WRONG number", action: "Fix footer phone link in Luxury Presence → (818) 632-2258" },
+  { site: "Google Business Profile", now: "\"The Rich Group | Compass\" — OLD Sherman Oaks address, \"Open 24 hours\", UNCLAIMED", action: "CLAIM IT, then set Studio City address + real hours" },
+  { site: "Yelp", now: "14140 Ventura Blvd, Sherman Oaks (old address)", action: "Update address & phone to Studio City office" },
+  { site: "Zillow", now: "Listed under Studio City", action: "Verify exact street address & phone match" },
+  { site: "Realtor.com", now: "Listed under Studio City 91604", action: "Verify address & phone match" },
+  { site: "Homes.com", now: "Profile exists", action: "Verify address & phone match" },
+  { site: "Bing Places / Apple Maps", now: "Unverified", action: "Claim/verify and set to official record" },
+  { site: "Facebook / LinkedIn", now: "Check About/contact info", action: "Update address & phone to match" },
+];
+
+window.CAMPAIGN.gbpSteps = [
+  "Search \"The Rich Group Compass\" on Google → business panel → \"Own this business?\" / \"Claim this business\"",
+  "Sign in with the business Google account; complete verification (phone, video, or postcard)",
+  "Update address to 12711 Ventura Blvd #110, Studio City, CA 91604",
+  "Set real business hours (replace \"Open 24 hours\")",
+  "Confirm category (Real Estate Agent), add service areas, website link, and 10+ photos",
+  "Start the review push using the messages in the Approval Queue — steady few per month",
+];
+
+window.CAMPAIGN.bigFinding = "The Google profile has only 5 reviews — but Anita has 28 on Zillow and 15 on Yelp. Claiming it and funneling reviews to Google is the single biggest free win available.";
+
+window.CAMPAIGN.faq = [
+  { q: "What areas does The Rich Group serve?", a: "The Rich Group specializes in Sherman Oaks, Studio City, and Valley Village, and serves the greater San Fernando Valley and LA's Westside — including Encino, Tarzana, Woodland Hills, Toluca Lake, Beverly Hills, and the Hollywood Hills." },
+  { q: "How experienced is The Rich Group?", a: "Led by Anita Rich, The Rich Group has more than 30 years of experience and ranks among the top 3% of agents nationwide, with a long track record of successful sales across the Valley and Westside." },
+  { q: "How do I find out what my home is worth?", a: "You can request a free, no-obligation home valuation through our website, or contact us directly for a personalized market analysis based on current local sales." },
+  { q: "Is 2026 a good time to buy or sell in Sherman Oaks?", a: "Both buyers and sellers have opportunities in 2026. Inventory has improved for buyers, while prices remain steady for sellers. The right move depends on your home, timeline, and goals." },
+  { q: "How do I get in touch with The Rich Group?", a: "Call us at (818) 632-2258 or use the contact form on our website." },
+];

@@ -158,6 +158,7 @@
       <nav class="nav" id="nav">
         <button data-p="dash" class="active"><span class="ic">▣</span> Dashboard</button>
         <button data-p="create"><span class="ic">✦</span> Create Post</button>
+        <button data-p="gallery"><span class="ic">▦</span> Gallery</button>
         <button data-p="queue"><span class="ic">✎</span> Approval Queue <span class="badge" id="qbadge">4</span></button>
         <button data-p="seo"><span class="ic">⌖</span> SEO Plan</button>
         <button data-p="reports"><span class="ic">▦</span> Reports</button>
@@ -282,6 +283,23 @@
                 <button class="btn btn-edit" id="queueBtn" style="width:100%;padding:11px;display:none">➜ Send to Approval Queue</button>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section class="page" id="gallery">
+          <div class="section" style="margin-top:0">
+            <h2>Photo Gallery</h2>
+            <div class="desc">Upload listing photos and pull up any image you've made — headshots, post visuals, listing shots. Use them in your posts.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+              <label class="btn btn-approve" style="padding:11px 18px;cursor:pointer">⬆ Upload listing images
+                <input type="file" id="galUpload" accept="image/*" multiple style="display:none"></label>
+              <select id="galKindUp" style="padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">
+                <option value="listing">Listing photo</option><option value="headshot">Headshot</option><option value="other">Other</option>
+              </select>
+              <span class="muted" id="galMsg"></span>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="galFilter"></div>
+            <div id="galGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
           </div>
         </section>
 
@@ -588,7 +606,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",seo:"4",content:"5",reviews:"6",addons:"7"};
@@ -1121,19 +1139,38 @@
     var rd=new FileReader(); rd.onload=function(){ hs.customBg=rd.result; }; rd.readAsDataURL(f); });
   document.getElementById("hsFile").addEventListener("change",function(e){ var f=e.target.files[0]; if(!f)return;
     var rd=new FileReader(); rd.onload=function(){ hs.src=rd.result; document.getElementById("hsSrc").innerHTML='<img src="'+hs.src+'" style="max-height:160px;max-width:100%;object-fit:contain;display:block;margin:0 auto">'; }; rd.readAsDataURL(f); });
+  function showHS(url){
+    document.getElementById("hsOut").innerHTML=
+      '<img src="'+url+'" style="max-width:100%;max-height:400px;object-fit:contain;display:block;margin:0 auto;border-radius:10px">'
+      +'<div style="display:flex;gap:8px;justify-content:center;padding:12px 0 4px;flex-wrap:wrap">'
+      +'<button class="btn btn-edit" id="hsRegen" style="padding:9px 15px">↻ Regenerate</button>'
+      +'<button class="btn btn-edit" id="hsEditBtn" style="padding:9px 15px">✎ Edit this image</button>'
+      +'<a class="btn btn-approve" href="'+url+'" download="headshot.png" style="padding:9px 15px;text-decoration:none">Download</a>'
+      +'<button class="btn btn-edit" id="hsSave" style="padding:9px 15px">Save to Gallery</button></div>'
+      +'<div id="hsEditRow" style="display:none;gap:6px;margin-top:8px">'
+      +'<input id="hsEditIn" placeholder="What to change? e.g. make the blazer navy, brighten it, softer smile" style="flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
+      +'<button class="btn btn-approve" id="hsEditGo" style="padding:9px 15px">Apply</button></div>'
+      +'<div class="muted" id="hsEditMsg" style="margin-top:6px"></div>';
+    document.getElementById("hsRegen").addEventListener("click",runHeadshot);
+    document.getElementById("hsSave").addEventListener("click",function(){ var b=this;b.textContent="Saving…";
+      fetch(API+"/api/gallery",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dataUrl:url,kind:"headshot",title:"Professional headshot"})}).then(function(){ b.textContent="✓ Saved"; }); });
+    document.getElementById("hsEditBtn").addEventListener("click",function(){ var r=document.getElementById("hsEditRow"); r.style.display=r.style.display==="none"?"flex":"none"; });
+    document.getElementById("hsEditGo").addEventListener("click",function(){
+      var ins=document.getElementById("hsEditIn").value.trim(); if(!ins){return;}
+      var b=this;b.textContent="Editing…";b.disabled=true; document.getElementById("hsEditMsg").textContent="";
+      fetch(API+"/api/headshot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"edit",dataUrl:url,instruction:ins})})
+        .then(function(r){return r.json()}).then(function(d){
+          if(d.ok){ showHS(d.dataUrl); } else { b.textContent="Apply"; b.disabled=false; document.getElementById("hsEditMsg").textContent=d.note||d.error||"Try again"; }
+        }).catch(function(){ b.textContent="Apply"; b.disabled=false; document.getElementById("hsEditMsg").textContent="Error — try again"; });
+    });
+  }
   function runHeadshot(){
     if(!hs.src){ document.getElementById("hsMsg").textContent="Upload a photo first."; return; }
     var b=document.getElementById("hsGen"); b.textContent="Generating… (~15s)"; b.disabled=true; document.getElementById("hsMsg").textContent="";
     document.getElementById("hsOut").innerHTML='<div class="muted" style="padding:30px 0">Working…</div>';
     fetch(API+"/api/headshot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dataUrl:hs.src,background:hs.bg,attire:hs.at,color:hs.cl,hair:hs.hr,vibe:hs.vb,customBg:hs.customBg})})
       .then(function(r){return r.json()}).then(function(d){ b.textContent="✦ Generate headshot"; b.disabled=false;
-        if(d.ok){ document.getElementById("hsOut").innerHTML=
-            '<img src="'+d.dataUrl+'" style="max-width:100%;max-height:400px;object-fit:contain;display:block;margin:0 auto;border-radius:10px">'
-            +'<div style="display:flex;gap:8px;justify-content:center;padding:12px 0 4px;flex-wrap:wrap">'
-            +'<button class="btn btn-edit" id="hsRegen" style="padding:9px 16px">↻ Regenerate</button>'
-            +'<a class="btn btn-approve" href="'+d.dataUrl+'" download="headshot.png" style="padding:9px 16px;text-decoration:none">Download</a></div>';
-          document.getElementById("hsRegen").addEventListener("click",runHeadshot);
-        }
+        if(d.ok){ showHS(d.dataUrl); }
         else { document.getElementById("hsOut").innerHTML=''; document.getElementById("hsMsg").textContent=d.note||d.error||"Try again"; }
       }).catch(function(){ b.textContent="✦ Generate headshot"; b.disabled=false; document.getElementById("hsMsg").textContent="Error — try again"; });
   }
@@ -1155,6 +1192,8 @@
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Brand color</label><input type="color" id="cf_color" value="'+(c.brandColor||"#8f2129")+'" style="width:60px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--soft)">'
       +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Font</label><select id="cf_font" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
       +['serif|Classic Serif','playfair|Playfair (elegant)','cinzel|Cinzel (luxury)','montserrat|Montserrat (modern)','sans|Clean Sans'].map(function(o){var p=o.split("|");return '<option value="'+p[0]+'"'+((c.font||"serif")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select'
+      +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Font size</label><select id="cf_fontscale" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'
+      +[['','Normal'],['92%','Small'],['108%','Large'],['118%','Extra large']].map(function(p){return '<option value="'+p[0]+'"'+((c.fontScale||"")===p[0]?" selected":"")+'>'+p[1]+'</option>';}).join("")+'</select'
       +fld("Phones (comma separated)","cf_phones",(c.phones||[]).join(", "))
       +fld("Email","cf_email",c.email)+fld("Website","cf_website",c.website)
       +fld("Address","cf_address",c.address)+fld("Brokerage / license line","cf_broker",c.brokerageLine)
@@ -1184,7 +1223,7 @@
     var g=function(id){return (document.getElementById(id)||{}).value||""};
     var card={ slug:curCard&&curCard.slug, name:g("cf_name"),
       titleLines:g("cf_titles").split("\n").map(function(x){return x.trim()}).filter(Boolean),
-      company:g("cf_company"), brandColor:g("cf_color"), font:g("cf_font"),
+      company:g("cf_company"), brandColor:g("cf_color"), font:g("cf_font"), fontScale:g("cf_fontscale"),
       phones:g("cf_phones").split(",").map(function(x){return x.trim()}).filter(Boolean),
       email:g("cf_email"), website:g("cf_website"), address:g("cf_address"), brokerageLine:g("cf_broker"),
       photoUrl:curCard._photo||"", logoUrl:curCard._logo||"",
@@ -1221,6 +1260,41 @@
       .then(function(){ renderInbox(); });
   });
   renderInbox();
+
+  // ---- Gallery ----
+  var galFilter="all"; var galItems=[];
+  function galURL(u){ return (location.hostname.indexOf("vercel")>-1?"https://rgapi.myroostcrm.com":"")+u; }
+  function renderGallery(){
+    var f=document.getElementById("galFilter");
+    var kinds=["all","listing","headshot","other"];
+    f.innerHTML=kinds.map(function(k){return '<button class="btn '+(galFilter===k?"btn-approve":"btn-edit")+'" data-gf="'+k+'" style="padding:6px 13px;text-transform:capitalize">'+k+'</button>'}).join("");
+    var items=galItems.filter(function(i){return galFilter==="all"||i.kind===galFilter});
+    var g=document.getElementById("galGrid");
+    if(!items.length){ g.innerHTML='<div class="muted">No images yet — upload listing photos above, or generate headshots &amp; posts.</div>'; return; }
+    g.innerHTML=items.map(function(i){
+      return '<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff">'
+        +'<img src="'+galURL(i.url)+'" style="width:100%;height:130px;object-fit:cover;display:block">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;font-size:11px">'
+        +'<span class="pill" style="text-transform:capitalize">'+i.kind+'</span>'
+        +'<span><a href="'+galURL(i.url)+'" download style="color:var(--accent);text-decoration:none;margin-right:8px">↓</a>'
+        +'<button data-galdel="'+i.id+'" style="background:none;border:0;color:var(--red);cursor:pointer">✕</button></span></div></div>';
+    }).join("");
+  }
+  function loadGallery(){ fetch(API+"/api/gallery").then(function(r){return r.json()}).then(function(d){ galItems=d.images||[]; renderGallery(); }).catch(function(){}); }
+  document.getElementById("galFilter").addEventListener("click",function(e){ var b=e.target.closest("[data-gf]"); if(!b)return; galFilter=b.getAttribute("data-gf"); renderGallery(); });
+  document.getElementById("galGrid").addEventListener("click",function(e){ var b=e.target.closest("[data-galdel]"); if(!b)return;
+    fetch(API+"/api/gallery?id="+b.getAttribute("data-galdel"),{method:"DELETE"}).then(function(){ loadGallery(); }); });
+  document.getElementById("galUpload").addEventListener("change",function(e){
+    var files=Array.from(e.target.files||[]); if(!files.length)return;
+    var kind=document.getElementById("galKindUp").value; var done=0;
+    document.getElementById("galMsg").textContent="Uploading "+files.length+"…";
+    files.forEach(function(f){ var rd=new FileReader(); rd.onload=function(){
+      fetch(API+"/api/gallery",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dataUrl:rd.result,kind:kind,title:f.name})})
+        .then(function(){ done++; if(done===files.length){ document.getElementById("galMsg").textContent="✅ "+done+" uploaded"; loadGallery(); setTimeout(function(){document.getElementById("galMsg").textContent="";},2000); } }); };
+      rd.readAsDataURL(f); });
+    e.target.value="";
+  });
+  loadGallery();
 
   // ---- Leads (CRM) ----
   var LEAD_STATES=["new","contacted","qualified","routed","closed"];

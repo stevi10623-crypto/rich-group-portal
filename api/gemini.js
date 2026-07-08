@@ -139,6 +139,34 @@ async function generateHeadshot(personDataUrl, o = {}) {
   } catch (err) { return { status: "error", note: String(err.message || err) }; }
 }
 
+// Refine an already-generated headshot with a plain-language instruction.
+async function editHeadshot(imageDataUrl, instruction) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { status: "not-configured", note: "Gemini (Nano Banana) not connected." };
+  const m = String(imageDataUrl || "").match(/^data:([^;]+);base64,(.+)$/);
+  if (!m) return { status: "error", note: "No image to edit." };
+  if (!instruction) return { status: "error", note: "Tell it what to change." };
+  if (spent() + COST_PER_IMAGE > SPEND_CAP_USD) return { status: "capped", note: `Image budget cap reached ($${SPEND_CAP_USD}).` };
+  const prompt =
+    `Edit this professional headshot as requested, while keeping the SAME person, their identity, face, and natural features exactly. ` +
+    `Requested change: ${instruction}. ` +
+    `Keep it photorealistic and high-end. Output the clean photograph ONLY — no text, watermarks, or borders.`;
+  const parts = [{ inlineData: { mimeType: m[1], data: m[2] } }, { text: prompt }];
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts }], generationConfig: { responseModalities: ["IMAGE"] } }),
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!res.ok) return { status: "error", note: `Gemini ${res.status}: ${(await res.text()).slice(0, 160)}` };
+    const data = await res.json();
+    const out = (data?.candidates?.[0]?.content?.parts ?? []).find((p) => p.inlineData)?.inlineData;
+    if (!out) return { status: "error", note: "Gemini returned no image" };
+    bump(COST_PER_IMAGE);
+    return { status: "generated", dataUrl: `data:${out.mimeType};base64,${out.data}`, note: "Edited with Nano Banana" };
+  } catch (err) { return { status: "error", note: String(err.message || err) }; }
+}
+
 const OPTIONS = { backgrounds: BACKGROUNDS.map((b) => ({ key: b.key, label: b.label })), attire: ATTIRE.map((a) => ({ key: a.key, label: a.label })), colors: COLORS.map((c) => ({ key: c.key, label: c.label })), vibes: VIBES.map((v) => ({ key: v.key, label: v.label })), hair: HAIR.map((h) => ({ key: h.key, label: h.label })) };
 
-module.exports = { generateHeadshot, OPTIONS };
+module.exports = { generateHeadshot, editHeadshot, OPTIONS };

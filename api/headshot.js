@@ -1,10 +1,16 @@
-const { generateHeadshot, OPTIONS } = require("./gemini");
+const { generateHeadshot, editHeadshot, OPTIONS } = require("./gemini");
 
 // GET  -> { options }
-// POST { dataUrl, background, attire, vibe } -> { ok, dataUrl, status, note }
+// POST { action:"edit", dataUrl, instruction } -> refine an existing headshot
+// POST { dataUrl, background, attire, color, vibe, hair } -> generate
 module.exports = async (req, res) => {
   try {
     if (req.method === "GET") return res.status(200).json({ options: OPTIONS });
+    if (req.method === "POST" && (req.body || {}).action === "edit") {
+      const b = req.body;
+      const r = await editHeadshot(b.dataUrl, b.instruction);
+      return res.status(200).json({ ok: r.status === "generated", ...r });
+    }
     if (req.method === "POST") {
       const b = req.body || {};
       if (!b.dataUrl) return res.status(400).json({ error: "no image" });

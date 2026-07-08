@@ -39,6 +39,7 @@
     var burg=c.brandColor||"#8f2129";
     var font=FONTS[c.font]||FONTS.serif;
     document.querySelector(".card").style.fontFamily=font;
+    if(c.fontScale) document.querySelector(".card").style.fontSize=c.fontScale;
     var initials=(c.name||"").split(" ").map(function(w){return w[0]}).join("").slice(0,2).toUpperCase();
     var photo=c.photoUrl?'<img class="photo" src="'+c.photoUrl+'" alt="">':'<div class="photo" style="color:'+burg+'">'+initials+'</div>';
     var logo=c.logoUrl?'<img class="logo" src="'+c.logoUrl+'" alt="">':'';
@@ -53,12 +54,21 @@
       +'<div class="name">'+esc(c.name)+'</div><div class="tl">'+tl+'</div>'
       +(c.company?'<div class="company">'+esc(c.company)+'</div>':'')+'</div>'
       +'<div class="body"><a class="btn save" id="vc" href="#" style="background:'+burg+'"><span class="ic">↓</span> Save to Contacts</a>'
-      +phones+email+web+addr+(socials?'<div class="socials">'+socials+'</div>':'')+'</div>'
+      +phones+email+web+addr+(socials?'<div class="socials">'+socials+'</div>':'')
+      +'<button class="btn" id="qrBtn" style="justify-content:center;margin-top:10px"><span class="ic" style="color:'+burg+'">▦</span> Show QR code</button>'
+      +'<div id="qrBox" style="display:none;text-align:center;margin-top:12px"></div></div>'
       +(c.brokerageLine?'<div class="foot">'+esc(c.brokerageLine)+'</div>':'');
     var vc=["BEGIN:VCARD","VERSION:3.0","FN:"+(c.name||""),"ORG:"+(c.company||""),"TITLE:"+((c.titleLines||[])[0]||"")]
       .concat((c.phones||[]).map(function(p){return "TEL;TYPE=WORK,VOICE:"+p.replace(/[^0-9+]/g,"")}))
       .concat(c.email?["EMAIL:"+c.email]:[]).concat(c.website?["URL:"+c.website]:[]).concat(["END:VCARD"]).join("\n");
     var b=document.getElementById("vc"); if(b)b.addEventListener("click",function(e){e.preventDefault();var a=document.createElement("a");a.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(vc);a.download=(c.slug||"card")+".vcf";a.click();});
+    var qb=document.getElementById("qrBtn"); if(qb)qb.addEventListener("click",function(){
+      var box=document.getElementById("qrBox");
+      if(box.innerHTML){ box.style.display=box.style.display==="none"?"block":"none"; return; }
+      var url=location.href.split("#")[0];
+      box.innerHTML='<img alt="QR" style="width:180px;height:180px;background:#fff;padding:8px;border-radius:10px" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(url)+'"><div style="font-size:11px;color:#8a8378;margin-top:6px">Scan to open this card</div>';
+      box.style.display="block";
+    });
   }
   fetch(API+"/api/card?slug="+encodeURIComponent(slug)).then(function(r){return r.json()})
     .then(function(c){ if(c&&c.name) render(c); else document.getElementById("card").innerHTML='<div class="body"><p>Card not found.</p></div>'; })

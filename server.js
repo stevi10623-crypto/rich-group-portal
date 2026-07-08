@@ -85,6 +85,19 @@ const server = http.createServer(async (req, res) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return fs.createReadStream(path.join(ROOT, "card.html")).pipe(res);
   }
+  // Gallery image files: /g/<id>
+  const gm = u.pathname.match(/^\/g\/([a-zA-Z0-9_]+)$/);
+  if (gm) {
+    const fp = require(path.join(ROOT, "api", "gallery.js")).filePath(gm[1]);
+    if (fp && fs.existsSync(fp)) {
+      const ext = path.extname(fp).slice(1);
+      res.setHeader("Content-Type", ext === "jpg" ? "image/jpeg" : `image/${ext}`);
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      return fs.createReadStream(fp).pipe(res);
+    }
+    res.statusCode = 404; return res.end("not found");
+  }
   res.statusCode = 404;
   res.end("not found");
 });

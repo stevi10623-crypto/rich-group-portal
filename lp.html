@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What's Your Home Worth? | The Rich Group</title>
+<style>
+  :root{--burg:#8f2129;--ink:#211f1f;--cream:#f5f0eb;--line:#e1ddd6}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--cream)}
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:linear-gradient(rgba(20,15,15,.55),rgba(20,15,15,.7)),url('https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1600&q=80') center/cover}
+  .card{background:#fff;border-radius:18px;max-width:460px;width:100%;padding:34px 30px;box-shadow:0 30px 70px rgba(0,0,0,.4)}
+  .brand{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--burg);text-align:center;margin-bottom:8px}
+  h1{font-size:27px;text-align:center;line-height:1.25;margin-bottom:8px}
+  .sub{text-align:center;color:#6b6b6b;font-size:14px;margin-bottom:22px}
+  label{display:block;font-size:12px;font-weight:600;color:#6b6b6b;margin:11px 0 5px}
+  input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#faf8f5}
+  input:focus{outline:none;border-color:var(--burg)}
+  button{width:100%;margin-top:20px;background:var(--burg);color:#fff;border:0;border-radius:10px;padding:14px;font-size:15px;font-weight:700;letter-spacing:.04em;cursor:pointer}
+  button:hover{filter:brightness(1.08)}
+  .foot{text-align:center;font-size:12px;color:#9a9a9a;margin-top:16px}
+  .ok{text-align:center;padding:20px 0}
+  .ok h2{color:var(--burg);margin-bottom:8px}
+</style>
+</head>
+<body>
+  <div class="hero">
+    <div class="card" id="card">
+      <div class="brand">The Rich Group</div>
+      <h1>What's Your Home Worth in Today's Market?</h1>
+      <div class="sub">Get a free, no-obligation valuation from a Sherman Oaks &amp; Studio City expert with 30+ years in the Valley.</div>
+      <form id="f">
+        <label>Your name</label><input id="name" required placeholder="Jane Homeowner">
+        <label>Phone</label><input id="phone" required placeholder="(818) 555-1234" inputmode="tel">
+        <label>Property address</label><input id="address" placeholder="123 Ventura Blvd, Studio City">
+        <button type="submit">Get My Free Valuation →</button>
+      </form>
+      <div class="foot">No spam. Just your home's value — from a real local expert. (818) 632-2258</div>
+    </div>
+  </div>
+<script>
+  var API = (location.hostname.indexOf("vercel.app")>-1) ? "https://rgapi.myroostcrm.com" : "";
+  document.getElementById("f").addEventListener("submit",function(e){
+    e.preventDefault();
+    var b={name:document.getElementById("name").value.trim(),phone:document.getElementById("phone").value.trim(),
+      address:document.getElementById("address").value.trim(),source:new URLSearchParams(location.search).get("src")||"landing-page"};
+    fetch(API+"/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
+      .then(function(r){return r.json()}).then(function(){
+        document.getElementById("card").innerHTML='<div class="ok"><div class="brand">The Rich Group</div><h2>You\'re all set, '+b.name.split(" ")[0]+'!</h2><p>Anita will personally reach out with your home\'s current market value. Talk soon.</p></div>';
+      }).catch(function(){ document.getElementById("card").innerHTML='<div class="ok"><h2>Thank you!</h2><p>We\'ll be in touch shortly.</p></div>'; });
+  });
+</script>
+</body>
+</html>

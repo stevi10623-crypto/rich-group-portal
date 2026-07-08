@@ -1,0 +1,7 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/c", "destination": "/card.html" },
+    { "source": "/card/anita-rich", "destination": "/card.html" }
+  ]
+}

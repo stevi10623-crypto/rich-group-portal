@@ -163,6 +163,9 @@
         <button data-p="content"><span class="ic">▤</span> Content</button>
         <button data-p="reviews"><span class="ic">★</span> Reviews</button>
         <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
+        <button data-p="ads"><span class="ic">◈</span> Ads</button>
+        <button data-p="headshot"><span class="ic">☺</span> Headshot Studio</button>
+        <button data-p="card"><span class="ic">▭</span> Digital Card</button>
         <button data-p="settings"><span class="ic">⚙</span> Settings</button>
       </nav>
       <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.08)">
@@ -219,7 +222,7 @@
             <div class="kpi"><div class="label">Google Reviews</div><div class="val">5</div><div class="chg flat">Goal 50 · unclaimed profile</div></div>
             <div class="kpi"><div class="label">All-Platform Rating</div><div class="val">4.8★</div><div class="chg up">43 reviews on Zillow + Yelp</div></div>
             <div class="kpi"><div class="label">"Sherman Oaks agent" rank</div><div class="val">—</div><div class="chg down">Not in top results yet</div></div>
-            <div class="kpi"><div class="label">Leads this month</div><div class="val">0</div><div class="chg flat">Funnel not live</div></div>
+            <div class="kpi"><div class="label">Leads this month</div><div class="val" id="kpiLeads">0</div><div class="chg flat" id="kpiLeadsSub">from your landing page</div></div>
           </div>
           <div class="row" style="margin-top:18px">
             <div class="col section" style="margin-top:0">
@@ -397,6 +400,71 @@
           </div>
         </section>
 
+        <section class="page" id="ads">
+          <div class="section" style="margin-top:0;border:1px solid var(--accent)">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:200px"><h2 style="margin:0">Ad strategy — best marketing right now</h2><div class="desc" style="margin:0" id="adWhen"></div></div>
+              <button class="btn btn-edit" id="adRefresh">↻ Update strategy</button>
+            </div>
+            <textarea id="adSummary" style="width:100%;margin-top:14px;min-height:150px;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:13.5px;line-height:1.6;font-family:inherit;background:var(--soft);white-space:pre-wrap"></textarea>
+            <div class="reqRow"><button class="btn btn-approve" id="adSave" style="padding:10px 18px">Save strategy</button><span class="muted" id="adSaveMsg" style="align-self:center"></span></div>
+          </div>
+          <div class="section">
+            <h2>Where the ads send people</h2>
+            <div class="desc">Every ad points to your free-valuation landing page — it captures the lead automatically (shows up under Leads on the Dashboard).</div>
+            <a class="btn btn-approve" id="lpLink" href="/lp" target="_blank" style="display:inline-block;text-decoration:none;padding:10px 16px">Open the landing page →</a>
+            <span class="muted" id="lpUrl" style="margin-left:10px"></span>
+          </div>
+          <div class="section">
+            <h2>Generate an ad</h2>
+            <div class="desc">AI writes a ready-to-paste ad for the platform you pick.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px" id="adPlat"></div>
+            <input id="adGoal" placeholder="Goal — e.g. get seller leads in Sherman Oaks" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft);margin-bottom:10px">
+            <button class="btn btn-approve" id="adGen" style="padding:11px 18px">✦ Write the ad</button>
+            <div id="adOut" style="margin-top:14px"></div>
+          </div>
+        </section>
+
+        <section class="page" id="headshot">
+          <div class="section" style="margin-top:0">
+            <h2>Headshot Studio</h2>
+            <div class="desc">Upload any photo of yourself → get a polished, professional headshot. Powered by Nano Banana (Gemini).</div>
+            <div class="row">
+              <div class="col">
+                <input type="file" id="hsFile" accept="image/*" style="margin-bottom:12px">
+                <div id="hsSrc" style="border:1px solid var(--line);border-radius:12px;min-height:120px;display:flex;align-items:center;justify-content:center;color:#9aa6b4;font-size:13px;overflow:hidden;margin-bottom:14px">Your photo</div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Background</div>
+                <div id="hsBg" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Attire</div>
+                <div id="hsAt" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Lighting</div>
+                <div id="hsVb" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+                <button class="btn btn-approve" id="hsGen" style="width:100%;padding:12px">✦ Generate headshot</button>
+                <div class="muted" id="hsMsg" style="margin-top:9px"></div>
+              </div>
+              <div class="col">
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Result</div>
+                <div id="hsOut" style="border:1px solid var(--line);border-radius:12px;min-height:220px;display:flex;align-items:center;justify-content:center;color:#9aa6b4;font-size:13px;overflow:hidden;background:var(--soft)">Your professional headshot appears here</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="card">
+          <div class="section" style="margin-top:0">
+            <h2>Digital Business Card</h2>
+            <div class="desc">Share this link or QR anywhere — it works on any phone, no app needed.</div>
+            <div class="reqRow" style="margin-top:0">
+              <a class="btn btn-approve" id="cardOpen" href="/c" target="_blank" style="display:inline-block;text-decoration:none;padding:10px 16px">Open card →</a>
+              <button class="btn btn-edit" id="cardCopy" style="padding:10px 16px">Copy share link</button>
+              <span class="muted" id="cardMsg" style="align-self:center"></span>
+            </div>
+            <div style="margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden;max-width:380px">
+              <iframe id="cardFrame" src="/c" style="width:100%;height:560px;border:0"></iframe>
+            </div>
+          </div>
+        </section>
+
         <section class="page" id="settings">
           <div class="section" style="margin-top:0">
             <h2>Agent settings</h2>
@@ -463,7 +531,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",content:"Content",reviews:"Reviews",addons:"Add-ons",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",seo:"4",content:"5",reviews:"6",addons:"7"};
@@ -931,6 +999,65 @@
         } else { st.textContent="Hmm — "+(d.error||"try again"); }
       })
       .catch(function(){ st.textContent="Couldn't send — check connection and try again."; });
+  });
+
+  // ---- Leads KPI (real) ----
+  fetch(API+"/api/lead").then(function(r){return r.json()}).then(function(d){
+    var el=document.getElementById("kpiLeads"); if(el){ el.textContent=d.countThisMonth||0;
+      document.getElementById("kpiLeadsSub").textContent=(d.leads&&d.leads.length?d.leads.length+" total captured":"from your landing page"); }
+  }).catch(function(){});
+
+  // ---- Ads ----
+  var AD_PLATS=["facebook","instagram","google"]; var adPlat="facebook";
+  document.getElementById("adPlat").innerHTML=AD_PLATS.map(function(p){return '<button class="btn" data-adp="'+p+'" style="padding:7px 13px;text-transform:capitalize">'+p+'</button>'}).join("");
+  function paintAdPlat(){ document.querySelectorAll("[data-adp]").forEach(function(b){ b.className="btn "+(b.getAttribute("data-adp")===adPlat?"btn-approve":"btn-edit"); }); }
+  paintAdPlat();
+  document.getElementById("adPlat").addEventListener("click",function(e){ var b=e.target.closest("[data-adp]"); if(!b)return; adPlat=b.getAttribute("data-adp"); paintAdPlat(); });
+  document.getElementById("lpUrl").textContent=(location.hostname.indexOf("vercel")>-1?location.origin:"")+"/lp";
+  function loadAds(){ fetch(API+"/api/ads").then(function(r){return r.json()}).then(function(d){
+    document.getElementById("adSummary").value=(d.strategy&&d.strategy.summary)||"";
+    document.getElementById("adWhen").textContent=d.strategy&&d.strategy.updatedAt?("Updated "+new Date(d.strategy.updatedAt).toLocaleDateString()):"Default strategy — tap Update to refresh";
+  }).catch(function(){}); }
+  loadAds();
+  document.getElementById("adRefresh").addEventListener("click",function(){ var b=this;b.textContent="Updating…";b.disabled=true;
+    fetch(API+"/api/ads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"refresh-strategy"})})
+      .then(function(r){return r.json()}).then(function(){ loadAds(); b.textContent="↻ Update strategy"; b.disabled=false; })
+      .catch(function(){ b.textContent="↻ Update strategy"; b.disabled=false; }); });
+  document.getElementById("adSave").addEventListener("click",function(){
+    fetch(API+"/api/ads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-strategy",summary:document.getElementById("adSummary").value})})
+      .then(function(r){return r.json()}).then(function(){ document.getElementById("adSaveMsg").textContent="✅ Saved"; setTimeout(function(){document.getElementById("adSaveMsg").textContent="";},1500); }); });
+  document.getElementById("adGen").addEventListener("click",function(){ var b=this;b.textContent="Writing…";b.disabled=true;
+    fetch(API+"/api/ads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"generate-ad",platform:adPlat,goal:document.getElementById("adGoal").value})})
+      .then(function(r){return r.json()}).then(function(d){ b.textContent="✦ Write the ad"; b.disabled=false;
+        if(d.ok){ document.getElementById("adOut").innerHTML='<div class="qcard"><div class="qhead"><span class="tag t-social" style="text-transform:capitalize">'+d.ad.platform+'</span></div><div class="qbody" style="white-space:pre-wrap">'+esc(d.ad.text)+'</div></div>'; }
+        else document.getElementById("adOut").innerHTML='<div class="muted">'+(d.error||"try again")+'</div>';
+      }).catch(function(){ b.textContent="✦ Write the ad"; b.disabled=false; }); });
+
+  // ---- Headshot Studio ----
+  var hs={src:null,bg:"office",at:"blazer",vb:"bright"};
+  fetch(API+"/api/headshot").then(function(r){return r.json()}).then(function(d){
+    function chips(box,list,cur,set){ document.getElementById(box).innerHTML=list.map(function(o){return '<button class="btn" data-k="'+o.key+'" style="padding:6px 11px;font-size:12px;text-transform:capitalize">'+o.label+'</button>'}).join("");
+      function paint(){ document.querySelectorAll("#"+box+" [data-k]").forEach(function(b){ b.className="btn "+(b.getAttribute("data-k")===hs[cur]?"btn-approve":"btn-edit"); }); } paint();
+      document.getElementById(box).addEventListener("click",function(e){ var b=e.target.closest("[data-k]"); if(!b)return; hs[cur]=b.getAttribute("data-k"); paint(); }); }
+    chips("hsBg",d.options.backgrounds,"bg"); chips("hsAt",d.options.attire,"at"); chips("hsVb",d.options.vibes,"vb");
+  }).catch(function(){});
+  document.getElementById("hsFile").addEventListener("change",function(e){ var f=e.target.files[0]; if(!f)return;
+    var rd=new FileReader(); rd.onload=function(){ hs.src=rd.result; document.getElementById("hsSrc").innerHTML='<img src="'+hs.src+'" style="width:100%;display:block">'; }; rd.readAsDataURL(f); });
+  document.getElementById("hsGen").addEventListener("click",function(){
+    if(!hs.src){ document.getElementById("hsMsg").textContent="Upload a photo first."; return; }
+    var b=this;b.textContent="Generating… (~15s)";b.disabled=true; document.getElementById("hsMsg").textContent="";
+    document.getElementById("hsOut").innerHTML='<div class="muted">Working…</div>';
+    fetch(API+"/api/headshot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dataUrl:hs.src,background:hs.bg,attire:hs.at,vibe:hs.vb})})
+      .then(function(r){return r.json()}).then(function(d){ b.textContent="✦ Generate headshot"; b.disabled=false;
+        if(d.ok){ document.getElementById("hsOut").innerHTML='<img src="'+d.dataUrl+'" style="width:100%;display:block">'
+            +'<a href="'+d.dataUrl+'" download="anita-headshot.png" style="display:block;text-align:center;padding:10px;color:var(--accent);font-weight:600;text-decoration:none">Download</a>'; }
+        else { document.getElementById("hsOut").innerHTML=''; document.getElementById("hsMsg").textContent=d.note||d.error||"Try again"; }
+      }).catch(function(){ b.textContent="✦ Generate headshot"; b.disabled=false; document.getElementById("hsMsg").textContent="Error — try again"; }); });
+
+  // ---- Card ----
+  document.getElementById("cardCopy").addEventListener("click",function(){
+    var link=(location.hostname.indexOf("vercel")>-1?location.origin:"http://localhost:4200")+"/c";
+    navigator.clipboard.writeText(link); document.getElementById("cardMsg").textContent="Copied: "+link;
   });
 
   renderSeo(); renderService();

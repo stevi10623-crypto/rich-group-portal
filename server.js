@@ -76,6 +76,15 @@ const server = http.createServer(async (req, res) => {
       return fs.createReadStream(f).pipe(res);
     }
   }
+  // Ad landing page + public digital card
+  if (u.pathname === "/lp" || u.pathname === "/lp.html") {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return fs.createReadStream(path.join(ROOT, "lp.html")).pipe(res);
+  }
+  if (u.pathname === "/c" || u.pathname === "/card.html" || u.pathname === "/card/anita-rich") {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return fs.createReadStream(path.join(ROOT, "card.html")).pipe(res);
+  }
   res.statusCode = 404;
   res.end("not found");
 });

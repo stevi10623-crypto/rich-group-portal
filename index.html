@@ -176,6 +176,29 @@
             <div class="bigdot"></div>
             <div><b>Baseline captured June 24, 2026.</b> <span class="muted">Goal: claim Google, grow reviews, and rank for non-branded local searches within 90 days.</span></div>
           </div>
+          <div class="section" style="margin-top:0;margin-bottom:18px">
+            <h2>Quick actions</h2>
+            <div class="desc">One tap — the AI does the rest. Everything lands in your Approval Queue first.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px" id="quickRow">
+              <button class="btn btn-approve" data-quick="today" style="padding:12px 18px;font-size:13.5px">☀ Make today's posts</button>
+              <button class="btn btn-approve" data-quick="valuation" style="padding:12px 18px;font-size:13.5px">🔑 Free valuation post</button>
+              <button class="btn btn-approve" data-quick="justsold" style="padding:12px 18px;font-size:13.5px">🏡 Just Sold post</button>
+              <button class="btn btn-approve" data-quick="neighborhood" style="padding:12px 18px;font-size:13.5px">🌴 Neighborhood spotlight</button>
+              <button class="btn btn-edit" data-quick="reviews" style="padding:12px 18px;font-size:13.5px">⭐ Ask clients for reviews</button>
+            </div>
+            <div class="muted" id="quickStatus" style="margin-top:10px"></div>
+          </div>
+
+          <div class="section" style="margin-top:0;margin-bottom:18px">
+            <h2>Ask me anything</h2>
+            <div class="desc">Stuck? Type a question in plain words — "how do I claim my Google page?", "what should I post today?"</div>
+            <div style="display:flex;gap:8px">
+              <input id="askInput" placeholder="Type your question…" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft)">
+              <button class="btn btn-approve" id="askBtn" style="padding:11px 18px">Ask</button>
+            </div>
+            <div id="askAnswer" style="display:none;margin-top:12px;font-size:13.5px;line-height:1.7;color:#46505e;background:var(--soft);border-radius:10px;padding:14px 16px;white-space:pre-wrap"></div>
+          </div>
+
           <div class="grid kpis">
             <div class="kpi"><div class="label">Google Reviews</div><div class="val">5</div><div class="chg flat">Goal 50 · unclaimed profile</div></div>
             <div class="kpi"><div class="label">All-Platform Rating</div><div class="val">4.8★</div><div class="chg up">43 reviews on Zillow + Yelp</div></div>
@@ -682,6 +705,65 @@
     fetch(API+"/api/rank",{method:"POST"}).then(function(r){return r.json()})
       .then(function(d){ renderRank({latest:d}); b.textContent="↻ Check rankings now"; b.disabled=false; })
       .catch(function(){ b.textContent="↻ Check rankings now"; b.disabled=false; });
+  });
+
+  // ---- Quick actions ----
+  var QUICK={
+    valuation:{kinds:["facebook","instagram"],brief:"Offer a free, no-obligation home valuation for Sherman Oaks and Studio City homeowners — invite them to call (818) 632-2258 or message us",label:"Free valuation"},
+    neighborhood:{kinds:["instagram","facebook"],brief:"A warm spotlight on why families love living in Studio City / Sherman Oaks — tree-lined streets, great food, community feel — and that we know every block after 30+ years",label:"Neighborhood spotlight"},
+    justsold:{kinds:["facebook","instagram"],brief:null,label:"Just Sold"},
+    today:{kinds:null},
+    reviews:{kinds:null}
+  };
+  function quickGenerate(kinds,brief,label){
+    var st=document.getElementById("quickStatus");
+    st.textContent="✨ Writing your "+label+" posts…";
+    Promise.all(kinds.map(function(k){
+      return fetch(API+"/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({kind:k,brief:brief})}).then(function(r){return r.json()})
+        .then(function(d){ if(d.text){
+          state.items.unshift({id:"u"+Date.now()+"_"+k,tag:"t-social",label:k.charAt(0).toUpperCase()+k.slice(1),
+            publish:true,platforms:[k],ttl:label+" — quick post",when:"just now",body:d.text});
+        }});
+    })).then(function(){ save(); renderQueue();
+      st.innerHTML="✅ Done! Your posts are in the <b>Approval Queue</b> — take a look and tap Approve.";
+    }).catch(function(){ st.textContent="Something hiccuped — try once more."; });
+  }
+  document.getElementById("quickRow").addEventListener("click",function(e){
+    var b=e.target.closest("button[data-quick]"); if(!b)return;
+    var k=b.getAttribute("data-quick");
+    if(k==="today"){ loadServerDrafts(); document.querySelector('[data-p="queue"]').click();
+      document.getElementById("quickStatus").textContent="Opening this morning's posts…"; return; }
+    if(k==="reviews"){ document.querySelector('[data-p="queue"]').click(); return; }
+    if(k==="justsold"){
+      var addr=prompt("Which property just sold? (street + neighborhood is enough)");
+      if(!addr)return;
+      quickGenerate(QUICK.justsold.kinds,"We just SOLD "+addr+" — celebrate the happy clients and invite anyone thinking of selling to reach out for a free valuation. Remind them to attach the real photo of the property before posting.","Just Sold");
+      return;
+    }
+    var q=QUICK[k]; quickGenerate(q.kinds,q.brief,q.label);
+  });
+
+  // ---- Ask me anything ----
+  function doAsk(){
+    var q=document.getElementById("askInput").value.trim(); if(!q)return;
+    var out=document.getElementById("askAnswer");
+    out.style.display="block"; out.textContent="Thinking…";
+    fetch(API+"/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})})
+      .then(function(r){return r.json()})
+      .then(function(d){ out.textContent=d.answer||("Sorry — "+(d.error||"try again")); })
+      .catch(function(){ out.textContent="Sorry — I couldn't reach the assistant. Try again."; });
+  }
+  document.getElementById("askBtn").addEventListener("click",doAsk);
+  document.getElementById("askInput").addEventListener("keydown",function(e){ if(e.key==="Enter")doAsk(); });
+
+  // ---- Quick keys (1-7 switch pages, g = generate) ----
+  document.addEventListener("keydown",function(e){
+    if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")return;
+    var order=["dash","create","queue","seo","content","reviews","addons"];
+    var n=parseInt(e.key,10);
+    if(n>=1&&n<=order.length){ var btn=document.querySelector('[data-p="'+order[n-1]+'"]'); if(btn)btn.click(); }
+    if(e.key==="g"){ var b2=document.querySelector('[data-p="create"]'); if(b2)b2.click(); }
   });
 
   renderSeo();

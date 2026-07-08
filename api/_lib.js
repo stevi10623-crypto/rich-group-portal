@@ -49,8 +49,10 @@ async function ollama(messages, maxTokens) {
 /** kind: one of STYLE keys; brief: what to write about. Returns finished copy. */
 async function writeCopy(kind, brief) {
   const style = STYLE[kind] || STYLE.facebook;
+  let brain = "";
+  try { brain = require("./brain").brainBlock(); } catch { /* brain optional */ }
   return ollama([
-    { role: "system", content: BRAND },
+    { role: "system", content: brain ? `${BRAND}\n\n${brain}` : BRAND },
     { role: "user", content: `Write the following. ${style}\n\nBrief: ${brief}` },
   ], kind === "blog" ? 900 : 500);
 }

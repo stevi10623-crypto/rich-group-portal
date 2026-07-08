@@ -61,9 +61,19 @@ module.exports = async (req, res) => {
     if (b.action === "generate-ad") {
       const platform = b.platform || "facebook";
       const goal = b.goal || "get home-valuation leads";
-      const sys = `You write high-converting ${platform} ads for a real-estate agent. ${BRAND} Return the ad ready to paste: a punchy HEADLINE line, then PRIMARY TEXT (2-4 sentences), then a clear CALL TO ACTION. For Google, give 3 headlines (<30 chars) + 2 descriptions (<90 chars). No fake statistics.`;
-      const text = await ollama(sys, `Goal: ${goal}. Extra notes: ${b.brief || "none"}. Write the ad now.`, 500);
-      const ad = { id: "ad_" + (cur.ads.length + 1), at: new Date().toISOString(), platform, goal, text };
+      const human = "Sound like a real person, NOT AI — no clichés (nestled, boasts, unparalleled, discover, elevate), no markdown, no asterisks.";
+      let sys, ad;
+      if (platform === "google") {
+        sys = `You write Google Search ads for a real-estate agent. ${BRAND} ${human} Return STRICT JSON only: {"headlines":["h1","h2","h3"],"descriptions":["d1","d2"]}. Headlines must be <=30 characters each, descriptions <=90 characters each. No fake statistics.`;
+        const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it now, JSON only.`, 400);
+        let f = {}; try { f = JSON.parse(raw.replace(/```(json)?/g, "").trim()); } catch { f = { headlines: [], descriptions: [] }; }
+        ad = { id: "ad_" + (cur.ads.length + 1), at: new Date().toISOString(), platform, goal, fields: { google: f } };
+      } else {
+        sys = `You write ${platform} lead ads for a real-estate agent. ${BRAND} ${human} Return STRICT JSON only: {"headline":"short headline (<=40 chars)","primaryText":"2-3 warm human sentences","description":"one short line","cta":"one of: Learn More, Get Quote, Sign Up, Contact Us","hashtags":"3-5 hashtags or empty"}. No fake statistics.`;
+        const raw = await ollama(sys, `Goal: ${goal}. Notes: ${b.brief || "none"}. Write it now, JSON only.`, 400);
+        let f = {}; try { f = JSON.parse(raw.replace(/```(json)?/g, "").trim()); } catch { f = { headline: "", primaryText: raw, cta: "Learn More" }; }
+        ad = { id: "ad_" + (cur.ads.length + 1), at: new Date().toISOString(), platform, goal, fields: { meta: f } };
+      }
       cur.ads.unshift(ad); store({ ...cur, ads: cur.ads.slice(0, 50) });
       return res.status(200).json({ ok: true, ad });
     }

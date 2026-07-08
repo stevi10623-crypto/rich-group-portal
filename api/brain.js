@@ -36,10 +36,10 @@ module.exports = async (req, res) => {
   try {
     if (req.method === "GET") return res.status(200).json({ entries: load() });
     if (req.method === "POST") {
-      const { text, source } = req.body || {};
+      const { text, source, category } = req.body || {};
       if (!text) return res.status(400).json({ error: "text required" });
       const l = load();
-      l.unshift({ id: "b_" + Date.now(), text: String(text).slice(0, 300), source: source || "taught", at: new Date().toISOString() });
+      l.unshift({ id: "b_" + Date.now(), text: String(text).slice(0, 400), source: source || "taught", category: category || "general", at: new Date().toISOString() });
       store(l.slice(0, 200));
       return res.status(200).json({ ok: true });
     }

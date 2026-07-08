@@ -26,19 +26,29 @@ const OLLAMA_KEY = process.env.OLLAMA_API_KEY || "";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "gpt-oss:120b";
 
 const TOPICS = [
-  "Sherman Oaks housing market 2026",
-  "Studio City real estate news",
-  "San Fernando Valley home prices",
+  "top trending news today",
   "Los Angeles mortgage rates this week",
+  "California gas prices news",
+  "US economy inflation cost of living 2026",
+  "Federal Reserve interest rate news",
+  "Los Angeles local news this week",
+  "Sherman Oaks Studio City community events",
+  "California housing market 2026",
 ];
 
+async function searxOnce(q, extra) {
+  try {
+    const res = await fetch(`${SEARX}/search?q=${encodeURIComponent(q)}&format=json${extra}`, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return [];
+    return ((await res.json()).results || []);
+  } catch { return []; }
+}
 async function searx(q) {
-  const res = await fetch(`${SEARX}/search?q=${encodeURIComponent(q)}&format=json&time_range=week`, {
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.results || []).slice(0, 4).map((r) => `- ${r.title}: ${(r.content || "").slice(0, 180)}`);
+  // Try fresh news first; fall back to a general fresh search so we always get data.
+  let r = await searxOnce(q, "&categories=news&time_range=week");
+  if (r.length < 2) r = await searxOnce(q, "&time_range=month");
+  if (r.length < 2) r = await searxOnce(q, "");
+  return r.slice(0, 5).map((x) => `- ${x.title}: ${(x.content || "").slice(0, 200)}`);
 }
 
 async function ollama(system, user) {
@@ -60,9 +70,10 @@ async function ollama(system, user) {
 }
 
 const SYSTEM =
-  "You are the SEO + social marketing agent for The Rich Group, Anita Rich's Los Angeles real-estate team " +
-  "(Sherman Oaks, Studio City, Valley Village, Encino; 30+ years; (818) 632-2258; therichgroup.la). Turn today's " +
-  "market research into posts that WIN NEW CLIENTS. Warm, expert, no hype, no invented statistics — only numbers that appear in the research.\n" +
+  "You are the viral social + SEO marketing agent for The Rich Group, Anita Rich's Los Angeles real-estate team " +
+  "(Sherman Oaks, Studio City, Valley Village, Encino; community-based; 30+ years; (818) 632-2258; therichgroup.la). Turn today's " +
+  "research into SCROLL-STOPPING posts that WIN NEW CLIENTS and make Anita look INFORMED and current. Warm, expert, no hype, no invented statistics — only facts from the research.\n" +
+  "HOOK STYLE: open with whatever is TRENDING today (rates, gas prices, the economy, a Fed move, tech headlines like the Chinese-AI ban, or a local LA/community happening) with a scroll-stopping first line, then connect it to what it means for buyers/sellers RIGHT NOW. Make her sound like the smart local expert who is on top of the news. STAY NON-PARTISAN: never take a political side or name-call; frame news only in terms of what it means for someone's home, money, or move, so it never alienates a client. Lean into her COMMUNITY roots (local events, neighborhood pride).\n" +
   "EVERY post MUST end with (a) a strong call-to-action — one of: 'Get your free home valuation at therichgroup.la', " +
   "'Call or text (818) 632-2258', 'DM us to talk' — and (b) relevant local hashtags.\n" +
   "HASHTAGS: Facebook 3-4, Instagram 6-8, Google Post 0. Mix broad + hyperlocal, e.g. #ShermanOaksRealEstate #StudioCityHomes " +

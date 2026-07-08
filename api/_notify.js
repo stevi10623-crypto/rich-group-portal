@@ -10,8 +10,9 @@ const T_SID = process.env.TWILIO_ACCOUNT_SID || "";
 const T_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 const T_FROM = process.env.TWILIO_FROM || "";
 const SMS_TO = process.env.ALERT_SMS_TO || "";
+const RESEND_KEY = process.env.RESEND_API_KEY || "";
 const SG_KEY = process.env.SENDGRID_API_KEY || "";
-const MAIL_FROM = process.env.ALERT_EMAIL_FROM || "";
+const MAIL_FROM = process.env.ALERT_EMAIL_FROM || "onboarding@resend.dev";
 const MAIL_TO = process.env.ALERT_EMAIL_TO || "";
 
 async function sendSMS(body) {
@@ -28,15 +29,28 @@ async function sendSMS(body) {
 }
 
 async function sendEmail(subject, text) {
-  if (!(SG_KEY && MAIL_FROM && MAIL_TO)) return "email:skipped(no-creds)";
+  if (!MAIL_TO) return "email:skipped(no-to)";
+  // Prefer Resend (simplest), fall back to SendGrid — whichever key is present.
   try {
-    const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + SG_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ personalizations: [{ to: [{ email: MAIL_TO }] }], from: { email: MAIL_FROM }, subject, content: [{ type: "text/plain", value: text }] }),
-      signal: AbortSignal.timeout(8000),
-    });
-    return res.ok ? "email:sent" : "email:err" + res.status;
+    if (RESEND_KEY) {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + RESEND_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: MAIL_FROM, to: [MAIL_TO], subject, text }),
+        signal: AbortSignal.timeout(8000),
+      });
+      return res.ok ? "email:sent(resend)" : "email:err" + res.status;
+    }
+    if (SG_KEY) {
+      const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + SG_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ personalizations: [{ to: [{ email: MAIL_TO }] }], from: { email: MAIL_FROM }, subject, content: [{ type: "text/plain", value: text }] }),
+        signal: AbortSignal.timeout(8000),
+      });
+      return res.ok ? "email:sent(sendgrid)" : "email:err" + res.status;
+    }
+    return "email:skipped(no-key)";
   } catch (e) { return "email:err"; }
 }
 

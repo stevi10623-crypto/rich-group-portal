@@ -678,6 +678,7 @@
         ? '<span class="status-pill '+(st==="rejected"?"sp-rej":"sp-sched")+'">'+statusHtml+'</span>'
         : '<button class="btn btn-approve" data-act="approve" data-id="'+item.id+'">'+(item.publish?"Approve & Publish":"Approve")+'</button>'
          +'<button class="btn btn-edit" data-edit="'+item.id+'">Edit</button>'
+         +'<button class="btn btn-edit" data-rewrite="'+item.id+'">↻ Rewrite</button>'
          +'<button class="btn btn-reject" data-act="rejected" data-id="'+item.id+'">Reject</button>';
       div.innerHTML='<div class="qhead"><span class="tag '+item.tag+'">'+esc(item.label)+'</span>'
         +'<span class="ttl">'+esc(item.ttl)+'</span><span class="when">'+esc(item.when)+'</span></div>'
@@ -716,8 +717,20 @@
     if(ed){
       var id2=ed.getAttribute("data-edit"), item2=findItem(id2);
       var cur=item2?item2.body:"";
-      var next=prompt("Edit the copy before approving:",cur);
+      var next=prompt("Edit the full post before approving:",cur);
       if(next!==null && item2){ item2.body=next; if(state.items.some(function(x){return x.id===id2})) save(); renderQueue(); }
+    }
+    var rw=e.target.closest("button[data-rewrite]");
+    if(rw){
+      var id3=rw.getAttribute("data-rewrite"), item3=findItem(id3); if(!item3)return;
+      var kind=(item3.platforms&&item3.platforms[0])|| (item3.tag==="t-gbp"?"gbp":item3.tag==="t-blog"?"blog":"facebook");
+      rw.textContent="Rewriting…"; rw.disabled=true;
+      fetch(API+"/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({kind:kind,brief:"Rewrite this real-estate post to be fresh, engaging and different, keeping the same intent, offer, and call-to-action:\n\n"+item3.body})})
+        .then(function(r){return r.json()}).then(function(d){
+          if(d.text){ item3.body=d.text; if(state.items.some(function(x){return x.id===id3})) save(); }
+          renderQueue();
+        }).catch(function(){ rw.textContent="↻ Rewrite"; rw.disabled=false; });
     }
   });
 

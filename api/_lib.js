@@ -12,9 +12,11 @@ const POSTIZ_URL = process.env.POSTIZ_URL || "http://192.168.1.30:4007";
 const POSTIZ_KEY = process.env.POSTIZ_API_KEY || "";
 
 const BRAND =
-  "You write marketing copy for The Rich Group, Anita Rich's Los Angeles real-estate team " +
-  "(Sherman Oaks, Studio City, Valley Village, Encino; 30+ years; phone (818) 632-2258). " +
-  "Voice: warm, expert, no hype, no fake statistics. Return ONLY the finished text — no preamble, no quotes, no markdown.";
+  "You ARE Anita Rich writing your own social posts on your phone — a warm, sharp LA real-estate broker with 30+ years in Sherman Oaks, Studio City, Valley Village & Encino ((818) 632-2258). " +
+  "WRITE LIKE A REAL HUMAN, NOT AI. This is the most important rule. It must read like a person actually typed it, not a generated ad.\n" +
+  "BANNED AI tells — never use: 'nestled', 'boasts', 'elevate', 'unparalleled', 'stunning', 'dive in', 'in the heart of', 'look no further', 'discover', 'unlock', 'testament to', 'when it comes to', 'we've got you covered', 'the perfect blend', 'a slice of', excessive em-dashes (—), and stiff parallel structure.\n" +
+  "DO: short and long sentences mixed, plain everyday words, a specific real detail, a natural aside or opinion, contractions, maybe one small imperfection. Confident and warm, never salesy or corporate. At most 1-2 emojis (often zero). Hashtags only where asked and never spammy. " +
+  "No fake statistics — only facts given. Return ONLY the finished text — no preamble, no quotes, no markdown, no labels.";
 
 const HASHTAGS =
   "Use a mix of broad + hyperlocal tags such as #ShermanOaksRealEstate #StudioCityHomes #ValleyVillage " +
@@ -97,11 +99,22 @@ function engineUrl(engine) {
   return engine === "final" ? FINAL_URL : DRAFT_URL;
 }
 
+// Turn a post's topic/headline into a concrete, photographable LA real-estate
+// scene that MATCHES the post — no text, no people. Falls back gracefully.
+async function sceneFromText(topic) {
+  const fallback = "an upscale Spanish-style residential street in the Los Angeles hills, manicured lawns, tall palm trees, warm evening sunlight on white stucco homes";
+  if (!topic || !topic.trim()) return fallback;
+  try {
+    const sys = "You turn a real-estate social-post topic into ONE short visual scene (8-16 words) for a photograph. It must be a REAL, photographable Los Angeles real-estate scene that visually matches the post's subject/mood (e.g. rates/economy -> a couple reviewing paperwork outside a nice home; just sold -> a 'SOLD' sign at a home; open house -> an inviting front entrance). NO text/words/signs-with-writing, NO logos. Return ONLY the scene phrase, nothing else.";
+    const scene = await ollama([{ role: "system", content: sys }, { role: "user", content: `Topic: ${topic}` }], 60);
+    return (scene || "").replace(/^["'\s]+|["'\s.]+$/g, "").slice(0, 200) || fallback;
+  } catch { return fallback; }
+}
+
 async function submitImage(brief, aspect, engine) {
   const dims = aspect === "landscape" ? [1216, 832] : aspect === "square" ? [1024, 1024] : [832, 1216];
-  const prompt =
-    `Golden hour architectural photography of ${brief || "an upscale Spanish-style residential street in the Los Angeles hills, manicured lawns, tall palm trees, warm evening sunlight on white stucco homes"}, ` +
-    "crystal clear sky, photorealistic, ultra sharp detail";
+  const scene = await sceneFromText(brief);
+  const prompt = `Golden hour real estate photography of ${scene}, natural warm light, photorealistic, ultra sharp detail`;
   const seed = Math.floor(Math.random() * 2_000_000_000);
   const wf = engine === "final"
     ? flux2Workflow(prompt, dims[0], dims[1], seed)

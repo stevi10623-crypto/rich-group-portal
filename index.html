@@ -45,6 +45,7 @@
   .nav button:hover{background:rgba(255,255,255,.07);color:#fff}
   .nav button.active{background:var(--accent);color:#fff;font-weight:600}
   .nav .ic{width:18px;text-align:center;font-size:15px}
+  .nav .kk{font-size:10px;color:#9fb6d2;border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:0 5px;margin-left:8px;font-weight:700}
   .nav .badge{margin-left:auto;background:var(--teal);color:#04332e;font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px}
   .sidefoot{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#8fa6c2}
   .main{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -187,6 +188,7 @@
               <button class="btn btn-edit" data-quick="reviews" style="padding:12px 18px;font-size:13.5px">⭐ Ask clients for reviews</button>
             </div>
             <div class="muted" id="quickStatus" style="margin-top:10px"></div>
+            <div class="muted" style="margin-top:8px;font-size:11.5px">⌨ Quick keys: press <b>1–7</b> to jump between pages, <b>G</b> to Create Post.</div>
           </div>
 
           <div class="section" style="margin-top:0;margin-bottom:18px">
@@ -394,6 +396,16 @@
 
   // ---- nav ----
   var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",content:"Content",reviews:"Reviews",addons:"Add-ons",settings:"Settings"};
+  // visible quick-keys: number badge on each nav item
+  (function(){
+    var map={dash:"1",create:"2",queue:"3",seo:"4",content:"5",reviews:"6",addons:"7"};
+    document.querySelectorAll(".nav button[data-p]").forEach(function(b){
+      var k=map[b.getAttribute("data-p")]; if(!k)return;
+      var ic=b.querySelector(".ic");
+      var kk=document.createElement("span"); kk.className="kk"; kk.textContent=k;
+      if(ic&&ic.nextSibling) b.insertBefore(kk, ic.nextSibling); else b.appendChild(kk);
+    });
+  })();
   document.getElementById("nav").addEventListener("click",function(e){
     var b=e.target.closest("button"); if(!b)return;
     document.querySelectorAll(".nav button").forEach(function(x){x.classList.remove("active")});

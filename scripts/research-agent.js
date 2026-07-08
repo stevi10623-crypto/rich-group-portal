@@ -8,6 +8,7 @@
 const fs = require("fs");
 const path = require("path");
 
+const { submitImage, checkImage } = require(path.join(__dirname, "..", "api", "_lib.js"));
 const ROOT = path.join(__dirname, "..");
 const DRAFTS = path.join(ROOT, "data", "drafts.json");
 
@@ -59,12 +60,16 @@ async function ollama(system, user) {
 }
 
 const SYSTEM =
-  "You are the marketing strategist for The Rich Group, Anita Rich's Los Angeles real-estate team " +
-  "(Sherman Oaks, Studio City, Valley Village; 30+ years; (818) 632-2258). Your job: turn today's market " +
-  "research into posts that ATTRACT NEW CLIENTS — every post ends with a clear next step (free home valuation, " +
-  "call/text, DM). Warm, expert, zero hype, no invented statistics — only use numbers that appear in the research. " +
-  "Return STRICT JSON only: an array of exactly 3 objects, each {\"platform\":\"facebook\"|\"instagram\"|\"gbp\",\"title\":\"...\",\"body\":\"...\"}. " +
-  "One post per platform. Instagram gets hashtags; Google (gbp) gets the phone number; Facebook is 3-5 warm sentences.";
+  "You are the SEO + social marketing agent for The Rich Group, Anita Rich's Los Angeles real-estate team " +
+  "(Sherman Oaks, Studio City, Valley Village, Encino; 30+ years; (818) 632-2258; therichgroup.la). Turn today's " +
+  "market research into posts that WIN NEW CLIENTS. Warm, expert, no hype, no invented statistics — only numbers that appear in the research.\n" +
+  "EVERY post MUST end with (a) a strong call-to-action — one of: 'Get your free home valuation at therichgroup.la', " +
+  "'Call or text (818) 632-2258', 'DM us to talk' — and (b) relevant local hashtags.\n" +
+  "HASHTAGS: Facebook 3-4, Instagram 6-8, Google Post 0. Mix broad + hyperlocal, e.g. #ShermanOaksRealEstate #StudioCityHomes " +
+  "#SFVRealEstate #LARealEstate #ValleyVillage #JustListed #HomeValuation #RichGroup.\n" +
+  "Return STRICT JSON only: an array of exactly 3 objects, each " +
+  "{\"platform\":\"facebook\"|\"instagram\"|\"gbp\",\"title\":\"...\",\"body\":\"...(full post incl. CTA + hashtags)\",\"image_scene\":\"a short VISUAL description of an on-brand LA real-estate scene for this post — a golden-hour street, luxury home exterior, or neighborhood view; NO text, NO people, NO specific address\"}. " +
+  "One post per platform: facebook, instagram, gbp.";
 
 async function main() {
   const stamp = new Date().toISOString();
@@ -90,7 +95,24 @@ async function main() {
   const jsonText = raw.replace(/^```(json)?|```$/gm, "").trim();
   const posts = JSON.parse(jsonText);
 
-  // 3. deposit into the portal queue store
+  // 3. generate an on-brand image for each post (Z-Image on the 3090)
+  async function genImage(scene) {
+    try {
+      const pid = await submitImage(scene || "an upscale Los Angeles neighborhood street at golden hour", "square", "draft");
+      for (let i = 0; i < 40; i++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const st = await checkImage(pid, "draft");
+        if (st.status === "done") return st.image;
+        if (st.status === "error") return null;
+      }
+    } catch (e) { console.log("  image failed:", e.message); }
+    return null;
+  }
+
+  const images = [];
+  for (const p of posts) { images.push(await genImage(p.image_scene)); }
+
+  // 4. deposit into the portal queue store
   const items = posts.map((p, i) => ({
     id: `agent_${Date.now()}_${i}`,
     tag: p.platform === "gbp" ? "t-gbp" : "t-social",
@@ -100,6 +122,7 @@ async function main() {
     ttl: `☀ Morning agent — ${p.title}`,
     when: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " 6am research",
     body: p.body,
+    image: images[i] || null,
   }));
 
   fs.mkdirSync(path.dirname(DRAFTS), { recursive: true });

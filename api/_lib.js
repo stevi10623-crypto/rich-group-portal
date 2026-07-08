@@ -16,12 +16,18 @@ const BRAND =
   "(Sherman Oaks, Studio City, Valley Village, Encino; 30+ years; phone (818) 632-2258). " +
   "Voice: warm, expert, no hype, no fake statistics. Return ONLY the finished text — no preamble, no quotes, no markdown.";
 
+const HASHTAGS =
+  "Use a mix of broad + hyperlocal tags such as #ShermanOaksRealEstate #StudioCityHomes #ValleyVillage " +
+  "#SFVRealEstate #LARealEstate #SanFernandoValley #JustListed #HomeValuation #RichGroup #LARealtor.";
+const CTA =
+  "End with a strong call-to-action: 'Get your free home valuation at therichgroup.la', or 'Call/text (818) 632-2258', or 'DM us'.";
+
 const STYLE = {
-  facebook: "Facebook post: friendly, 3-5 sentences, minimal emojis, 2-3 hashtags max.",
-  instagram: "Instagram caption: 2-4 short lines, tasteful emojis, end with 5 relevant hashtags.",
-  tiktok: "TikTok caption: punchy hook first line, casual, 4-6 hashtags.",
-  gbp: "Google Business Profile post: 2-4 sentences, clear call to action with the phone number, no hashtags.",
-  blog: "Blog post: ~300 words, headline on the first line, short paragraphs, practical and local.",
+  facebook: `Facebook post: friendly, 3-5 sentences, minimal emojis. ${CTA} Then 3-4 hashtags. ${HASHTAGS}`,
+  instagram: `Instagram caption: 2-4 short lines, tasteful emojis. ${CTA} End with 6-8 hashtags. ${HASHTAGS}`,
+  tiktok: `TikTok caption: punchy hook first line, casual. ${CTA} End with 5-6 hashtags. ${HASHTAGS}`,
+  gbp: `Google Business Profile post: 2-4 sentences. ${CTA} Include the phone number. No hashtags.`,
+  blog: "Blog post: ~300 words, headline on the first line, short paragraphs, practical and local. End with a call-to-action linking to a free home valuation.",
   review_reply: "Review reply: 2-3 warm professional sentences signed '— Anita'. If the review is negative, be gracious, take it seriously, and offer to make it right offline.",
 };
 

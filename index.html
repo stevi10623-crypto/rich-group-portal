@@ -158,20 +158,20 @@
       <nav class="nav" id="nav">
         <button data-p="dash" class="active"><span class="ic">▣</span> Dashboard</button>
         <button data-p="create"><span class="ic">✦</span> Create Post</button>
-        <button data-p="gallery"><span class="ic">▦</span> Gallery</button>
-        <button data-p="queue"><span class="ic">✎</span> Approval Queue <span class="badge" id="qbadge">4</span></button>
-        <button data-p="seo"><span class="ic">⌖</span> SEO Plan</button>
-        <button data-p="reports"><span class="ic">▦</span> Reports</button>
-        <button data-p="leads"><span class="ic">◎</span> Leads <span class="badge" id="leadsBadge" style="display:none">0</span></button>
         <button data-p="content"><span class="ic">▤</span> Content</button>
-        <button data-p="reviews"><span class="ic">★</span> Reviews</button>
-        <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
+        <button data-p="queue"><span class="ic">✎</span> Approval Queue <span class="badge" id="qbadge">4</span></button>
+        <button data-p="social"><span class="ic">⇄</span> Auto-Post Setup</button>
+        <button data-p="leads"><span class="ic">◎</span> Leads <span class="badge" id="leadsBadge" style="display:none">0</span></button>
+        <button data-p="reports"><span class="ic">▦</span> Reports</button>
         <button data-p="ads"><span class="ic">◈</span> Ads</button>
+        <button data-p="reviews"><span class="ic">★</span> Reviews</button>
         <button data-p="headshot"><span class="ic">☺</span> Headshot Studio</button>
         <button data-p="card"><span class="ic">▭</span> Digital Card</button>
-        <button data-p="inbox"><span class="ic">✉</span> Requests <span class="badge" id="inboxBadge" style="display:none">0</span></button>
-        <button data-p="social"><span class="ic">⇄</span> Auto-Post Setup</button>
         <button data-p="brain"><span class="ic">🧠</span> The Brain</button>
+        <button data-p="addons"><span class="ic">＋</span> Add-ons</button>
+        <button data-p="inbox"><span class="ic">✉</span> Requests <span class="badge" id="inboxBadge" style="display:none">0</span></button>
+        <button data-p="gallery"><span class="ic">▦</span> Gallery</button>
+        <button data-p="seo"><span class="ic">⌖</span> SEO Plan</button>
         <button data-p="settings"><span class="ic">⚙</span> Settings</button>
       </nav>
       <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.08)">
@@ -649,7 +649,7 @@
   var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",brain:"The Brain",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
-    var map={dash:"1",create:"2",queue:"3",seo:"4",content:"5",reviews:"6",addons:"7"};
+    var map={dash:"1",create:"2",content:"3",queue:"4",social:"5",leads:"6",reports:"7"};
     document.querySelectorAll(".nav button[data-p]").forEach(function(b){
       var k=map[b.getAttribute("data-p")]; if(!k)return;
       var ic=b.querySelector(".ic");
@@ -1138,7 +1138,7 @@
   // ---- Quick keys (1-7 switch pages, g = generate) ----
   document.addEventListener("keydown",function(e){
     if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")return;
-    var order=["dash","create","queue","seo","content","reviews","addons"];
+    var order=["dash","create","content","queue","social","leads","reports"];
     var n=parseInt(e.key,10);
     if(n>=1&&n<=order.length){ var btn=document.querySelector('[data-p="'+order[n-1]+'"]'); if(btn)btn.click(); }
     if(e.key==="g"){ var b2=document.querySelector('[data-p="create"]'); if(b2)b2.click(); }
@@ -1547,6 +1547,25 @@
   }
   document.getElementById("rpPeriod").addEventListener("click",function(e){ if(e.target.id==="rpGo"){ loadReport(); return; } var b=e.target.closest("[data-rp]"); if(!b)return; rpPeriod=b.getAttribute("data-rp"); document.getElementById("rpCustom").style.display=rpPeriod==="custom"?"inline-flex":"none"; if(rpPeriod!=="custom")loadReport(); else paintRp(); });
   loadReport();
+
+  // ---- Voice input (talk instead of type) — browser Web Speech API, works on phone + laptop ----
+  (function(){
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    function addMic(id){
+      var el=document.getElementById(id); if(!el||el._mic||!SR)return; el._mic=1;
+      var b=document.createElement("button"); b.type="button"; b.className="btn btn-edit";
+      b.textContent="🎤 Talk"; b.style.cssText="padding:6px 12px;margin-top:6px;font-size:12px;display:inline-block";
+      if(el.nextSibling) el.parentNode.insertBefore(b, el.nextSibling); else el.parentNode.appendChild(b);
+      var rec=new SR(); rec.lang="en-US"; rec.interimResults=false; rec.continuous=false; var on=false;
+      b.addEventListener("click",function(){ if(on){ rec.stop(); return; } try{ rec.start(); }catch(e){} });
+      rec.onstart=function(){ on=true; b.textContent="🔴 Listening… tap to stop"; };
+      rec.onend=function(){ on=false; b.textContent="🎤 Talk"; };
+      rec.onresult=function(e){ var t=""; for(var i=e.resultIndex;i<e.results.length;i++) t+=e.results[i][0].transcript; el.value=(el.value?el.value.replace(/\s*$/,"")+" ":"")+t.trim(); el.dispatchEvent(new Event("input")); };
+      rec.onerror=function(){ on=false; b.textContent="🎤 Talk"; };
+    }
+    if(!SR){ return; } // unsupported browser: no mic buttons, typing still works
+    ["brief","askInput","adGoal","reqMsg","brainIn"].forEach(addMic);
+  })();
 
   renderSeo(); renderService();
   renderCreate();

@@ -16,6 +16,12 @@ function store(list) {
 module.exports = async (req, res) => {
   try {
     if (req.method === "GET") return res.status(200).json({ requests: load() });
+    if (req.method === "POST" && (req.body || {}).action === "status") {
+      const { id, status } = req.body;
+      const list = load().map((r) => (r.id === id ? { ...r, status } : r));
+      store(list);
+      return res.status(200).json({ ok: true });
+    }
     if (req.method === "POST") {
       const { category, message } = req.body || {};
       if (!message) return res.status(400).json({ error: "message required" });

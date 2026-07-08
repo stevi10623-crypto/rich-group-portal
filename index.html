@@ -166,6 +166,7 @@
         <button data-p="ads"><span class="ic">◈</span> Ads</button>
         <button data-p="headshot"><span class="ic">☺</span> Headshot Studio</button>
         <button data-p="card"><span class="ic">▭</span> Digital Card</button>
+        <button data-p="inbox"><span class="ic">✉</span> Requests <span class="badge" id="inboxBadge" style="display:none">0</span></button>
         <button data-p="settings"><span class="ic">⚙</span> Settings</button>
       </nav>
       <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.08)">
@@ -437,12 +438,18 @@
               <div class="col">
                 <input type="file" id="hsFile" accept="image/*" style="margin-bottom:12px">
                 <div id="hsSrc" style="border:1px solid var(--line);border-radius:12px;min-height:120px;display:flex;align-items:center;justify-content:center;color:#9aa6b4;font-size:13px;overflow:hidden;margin-bottom:14px">Your photo</div>
-                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Background</div>
-                <div id="hsBg" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Background <span class="muted" style="font-weight:400">(24)</span></div>
+                <div id="hsBg" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;max-height:112px;overflow:auto;padding:2px"></div>
                 <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Attire</div>
-                <div id="hsAt" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+                <div id="hsAt" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;max-height:84px;overflow:auto;padding:2px"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Color</div>
+                <div id="hsCl" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;max-height:84px;overflow:auto;padding:2px"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Hair</div>
+                <div id="hsHr" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
                 <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Lighting</div>
-                <div id="hsVb" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+                <div id="hsVb" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Or use your own background <span class="muted" style="font-weight:400">(optional)</span></div>
+                <input type="file" id="hsBgFile" accept="image/*" style="margin-bottom:16px;font-size:12px">
                 <button class="btn btn-approve" id="hsGen" style="width:100%;padding:12px">✦ Generate headshot</button>
                 <div class="muted" id="hsMsg" style="margin-top:9px"></div>
               </div>
@@ -456,16 +463,36 @@
 
         <section class="page" id="card">
           <div class="section" style="margin-top:0">
-            <h2>Digital Business Card</h2>
-            <div class="desc">Share this link or QR anywhere — it works on any phone, no app needed.</div>
-            <div class="reqRow" style="margin-top:0">
-              <a class="btn btn-approve" id="cardOpen" href="/c" target="_blank" style="display:inline-block;text-decoration:none;padding:10px 16px">Open card →</a>
-              <button class="btn btn-edit" id="cardCopy" style="padding:10px 16px">Copy share link</button>
-              <span class="muted" id="cardMsg" style="align-self:center"></span>
+            <h2>Digital Business Cards</h2>
+            <div class="desc">Create and edit shareable cards — works on any phone, no app. Add as many as you need.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+              <select id="cardSel" style="padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)"></select>
+              <button class="btn btn-edit" id="cardNew" style="padding:9px 14px">+ New card</button>
             </div>
-            <div style="margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden;max-width:380px">
-              <iframe id="cardFrame" src="/c" style="width:100%;height:560px;border:0"></iframe>
+          </div>
+          <div class="row">
+            <div class="col section" style="margin-top:0">
+              <h2 style="font-size:14px">Edit card</h2>
+              <div id="cardForm"></div>
+              <div class="reqRow"><button class="btn btn-approve" id="cardSave" style="padding:11px 20px">Save card</button><span class="muted" id="cardMsg" style="align-self:center"></span></div>
             </div>
+            <div class="col section" style="margin-top:0">
+              <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+                <a class="btn btn-approve" id="cardOpen" href="/c" target="_blank" style="display:inline-block;text-decoration:none;padding:8px 14px">Open →</a>
+                <button class="btn btn-edit" id="cardCopy" style="padding:8px 14px">Copy link</button>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:14px;overflow:hidden;max-width:360px">
+                <iframe id="cardFrame" src="/c" style="width:100%;height:520px;border:0"></iframe>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="inbox">
+          <div class="section" style="margin-top:0">
+            <h2>Requests — for Steve's Dev &amp; Data</h2>
+            <div class="desc">Everything Anita asks for (add-ons, changes, new tools) lands here to be actioned. Mark items as you complete them.</div>
+            <div id="inboxList"></div>
           </div>
         </section>
 
@@ -535,7 +562,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",queue:"Approval Queue",seo:"SEO Plan",content:"Content",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",seo:"4",content:"5",reviews:"6",addons:"7"};
@@ -641,8 +668,19 @@
     });
   }
   document.getElementById("addonGrid").addEventListener("click",function(e){
-    var s=e.target.closest(".sw"); if(!s)return;
-    var k=s.getAttribute("data-k"); state.addons[k]=!state.addons[k]; save(); renderAddons();
+    var sw=e.target.closest(".sw"); if(!sw)return;
+    var k=sw.getAttribute("data-k"); var turningOn=!state.addons[k];
+    state.addons[k]=turningOn; save(); renderAddons();
+    if(turningOn){
+      var a=ADDONS.find(function(x){return x.k===k});
+      fetch(API+"/api/request",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({category:"Add-on",message:"Activate add-on: "+(a?a.n:k)+" — "+(a?a.d:"")})}).catch(function(){});
+      // little confirmation
+      var g=document.getElementById("addonGrid");
+      var note=document.createElement("div"); note.className="muted"; note.style.marginTop="8px";
+      note.textContent="✅ Request sent to Steve's Dev & Data to set up "+(a?a.n:k)+".";
+      g.parentNode.appendChild(note); setTimeout(function(){note.remove();},3500);
+    }
   });
 
   document.querySelectorAll(".rev .reply").forEach(function(r){
@@ -1042,20 +1080,23 @@
       }).catch(function(){ b.textContent="✦ Write the ad"; b.disabled=false; }); });
 
   // ---- Headshot Studio ----
-  var hs={src:null,bg:"office",at:"blazer",vb:"bright"};
+  var hs={src:null,bg:"office",at:"blazer",cl:"navy",hr:"asis",vb:"classic",customBg:null};
   fetch(API+"/api/headshot").then(function(r){return r.json()}).then(function(d){
     function chips(box,list,cur,set){ document.getElementById(box).innerHTML=list.map(function(o){return '<button class="btn" data-k="'+o.key+'" style="padding:6px 11px;font-size:12px;text-transform:capitalize">'+o.label+'</button>'}).join("");
       function paint(){ document.querySelectorAll("#"+box+" [data-k]").forEach(function(b){ b.className="btn "+(b.getAttribute("data-k")===hs[cur]?"btn-approve":"btn-edit"); }); } paint();
       document.getElementById(box).addEventListener("click",function(e){ var b=e.target.closest("[data-k]"); if(!b)return; hs[cur]=b.getAttribute("data-k"); paint(); }); }
     chips("hsBg",d.options.backgrounds,"bg"); chips("hsAt",d.options.attire,"at"); chips("hsVb",d.options.vibes,"vb");
+    chips("hsCl",d.options.colors||[],"cl"); chips("hsHr",d.options.hair||[],"hr");
   }).catch(function(){});
+  document.getElementById("hsBgFile").addEventListener("change",function(e){ var f=e.target.files[0]; if(!f)return;
+    var rd=new FileReader(); rd.onload=function(){ hs.customBg=rd.result; }; rd.readAsDataURL(f); });
   document.getElementById("hsFile").addEventListener("change",function(e){ var f=e.target.files[0]; if(!f)return;
     var rd=new FileReader(); rd.onload=function(){ hs.src=rd.result; document.getElementById("hsSrc").innerHTML='<img src="'+hs.src+'" style="width:100%;display:block">'; }; rd.readAsDataURL(f); });
   document.getElementById("hsGen").addEventListener("click",function(){
     if(!hs.src){ document.getElementById("hsMsg").textContent="Upload a photo first."; return; }
     var b=this;b.textContent="Generating… (~15s)";b.disabled=true; document.getElementById("hsMsg").textContent="";
     document.getElementById("hsOut").innerHTML='<div class="muted">Working…</div>';
-    fetch(API+"/api/headshot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dataUrl:hs.src,background:hs.bg,attire:hs.at,vibe:hs.vb})})
+    fetch(API+"/api/headshot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dataUrl:hs.src,background:hs.bg,attire:hs.at,color:hs.cl,hair:hs.hr,vibe:hs.vb,customBg:hs.customBg})})
       .then(function(r){return r.json()}).then(function(d){ b.textContent="✦ Generate headshot"; b.disabled=false;
         if(d.ok){ document.getElementById("hsOut").innerHTML='<img src="'+d.dataUrl+'" style="width:100%;display:block">'
             +'<a href="'+d.dataUrl+'" download="anita-headshot.png" style="display:block;text-align:center;padding:10px;color:var(--accent);font-weight:600;text-decoration:none">Download</a>'; }
@@ -1063,10 +1104,85 @@
       }).catch(function(){ b.textContent="✦ Generate headshot"; b.disabled=false; document.getElementById("hsMsg").textContent="Error — try again"; }); });
 
   // ---- Card ----
-  document.getElementById("cardCopy").addEventListener("click",function(){
-    var link=(location.hostname.indexOf("vercel")>-1?location.origin:"http://localhost:4200")+"/c";
-    navigator.clipboard.writeText(link); document.getElementById("cardMsg").textContent="Copied: "+link;
+  // ---- Digital Card editor ----
+  var cards=[], curCard=null;
+  var SOCS=["instagram","facebook","linkedin","x","youtube"];
+  function cardOrigin(){ return location.hostname.indexOf("vercel")>-1?location.origin:"http://localhost:4200"; }
+  function fld(label,id,val,ph){ return '<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">'+label+'</label><input id="'+id+'" value="'+(val||"").replace(/"/g,"&quot;")+'" placeholder="'+(ph||"")+'" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft)">'; }
+  function renderCardForm(c){
+    curCard=c;
+    var soc={}; (c.socials||[]).forEach(function(s){soc[s.type]=s.url;});
+    document.getElementById("cardForm").innerHTML=
+      fld("Name","cf_name",c.name,"Anita Rich")
+      +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Title lines (one per line)</label><textarea id="cf_titles" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--soft);min-height:52px">'+((c.titleLines||[]).join("\n"))+'</textarea>'
+      +fld("Company","cf_company",c.company)
+      +'<label style="display:block;font-size:11px;font-weight:600;color:var(--grey);margin:9px 0 4px">Brand color</label><input type="color" id="cf_color" value="'+(c.brandColor||"#8f2129")+'" style="width:60px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--soft)">'
+      +fld("Phones (comma separated)","cf_phones",(c.phones||[]).join(", "))
+      +fld("Email","cf_email",c.email)+fld("Website","cf_website",c.website)
+      +fld("Address","cf_address",c.address)+fld("Brokerage / license line","cf_broker",c.brokerageLine)
+      +'<div style="margin-top:8px;font-size:11px;font-weight:600;color:var(--grey)">Photo &amp; logo</div>'
+      +'<div style="display:flex;gap:14px;margin-top:5px"><label style="font-size:12px">Photo <input type="file" id="cf_photo" accept="image/*" style="font-size:11px"></label>'
+      +'<label style="font-size:12px">Logo <input type="file" id="cf_logo" accept="image/*" style="font-size:11px"></label></div>'
+      +'<div style="margin-top:10px;font-size:11px;font-weight:600;color:var(--grey)">Social links</div>'
+      +SOCS.map(function(k){return fld(k.charAt(0).toUpperCase()+k.slice(1),"cf_soc_"+k,soc[k]);}).join("");
+    c._photo=c.photoUrl||""; c._logo=c.logoUrl||"";
+    document.getElementById("cf_photo").addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){c._photo=rd.result;};rd.readAsDataURL(f);});
+    document.getElementById("cf_logo").addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){c._logo=rd.result;};rd.readAsDataURL(f);});
+  }
+  function loadCards(sel){
+    fetch(API+"/api/card").then(function(r){return r.json()}).then(function(d){
+      cards=d.cards||[];
+      var s2=document.getElementById("cardSel");
+      s2.innerHTML=cards.map(function(c){return '<option value="'+c.slug+'">'+esc(c.name)+'</option>'}).join("");
+      var pick=sel||(cards[0]&&cards[0].slug);
+      if(pick){ s2.value=pick; var c=cards.find(function(x){return x.slug===pick})||cards[0]; renderCardForm(c); refreshPreview(c.slug); }
+    }).catch(function(){});
+  }
+  function refreshPreview(slug){ document.getElementById("cardFrame").src="/c?slug="+encodeURIComponent(slug)+"&t="+Date.now(); document.getElementById("cardOpen").href="/c?slug="+encodeURIComponent(slug); }
+  document.getElementById("cardSel").addEventListener("change",function(){ var c=cards.find(function(x){return x.slug===this.value}); if(c){renderCardForm(c);refreshPreview(c.slug);} }.bind(document.getElementById("cardSel")));
+  document.getElementById("cardSel").addEventListener("change",function(e){ var c=cards.find(function(x){return x.slug===e.target.value}); if(c){renderCardForm(c);refreshPreview(c.slug);} });
+  document.getElementById("cardNew").addEventListener("click",function(){ renderCardForm({name:"",titleLines:[],company:"",brandColor:"#8f2129",phones:[],socials:[]}); });
+  document.getElementById("cardSave").addEventListener("click",function(){
+    var g=function(id){return (document.getElementById(id)||{}).value||""};
+    var card={ slug:curCard&&curCard.slug, name:g("cf_name"),
+      titleLines:g("cf_titles").split("\n").map(function(x){return x.trim()}).filter(Boolean),
+      company:g("cf_company"), brandColor:g("cf_color"),
+      phones:g("cf_phones").split(",").map(function(x){return x.trim()}).filter(Boolean),
+      email:g("cf_email"), website:g("cf_website"), address:g("cf_address"), brokerageLine:g("cf_broker"),
+      photoUrl:curCard._photo||"", logoUrl:curCard._logo||"",
+      socials:SOCS.map(function(k){return {type:k,url:g("cf_soc_"+k)}}).filter(function(s){return s.url}) };
+    if(!card.name){ document.getElementById("cardMsg").textContent="Add a name."; return; }
+    document.getElementById("cardMsg").textContent="Saving…";
+    fetch(API+"/api/card",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({card:card})})
+      .then(function(r){return r.json()}).then(function(d){ document.getElementById("cardMsg").textContent="✅ Saved"; loadCards(d.slug); setTimeout(function(){document.getElementById("cardMsg").textContent="";},1500); });
   });
+  document.getElementById("cardCopy").addEventListener("click",function(){
+    var slug=document.getElementById("cardSel").value||"anita-rich";
+    var link=cardOrigin()+"/c?slug="+slug; navigator.clipboard.writeText(link); document.getElementById("cardMsg").textContent="Copied: "+link;
+  });
+  loadCards();
+
+  function renderInbox(){
+    fetch(API+"/api/request").then(function(r){return r.json()}).then(function(d){
+      var reqs=d.requests||[]; var open=reqs.filter(function(r){return r.status!=="done"}).length;
+      var bd=document.getElementById("inboxBadge"); if(bd){ bd.textContent=open; bd.style.display=open?"inline-block":"none"; }
+      var el=document.getElementById("inboxList"); if(!el)return;
+      if(!reqs.length){ el.innerHTML='<div class="muted">No requests yet.</div>'; return; }
+      el.innerHTML=reqs.map(function(r){
+        var done=r.status==="done";
+        return '<div class="qcard'+(done?" done":"")+'"><div class="qhead"><span class="tag t-review">'+esc(r.category||"Request")+'</span>'
+          +'<span class="when">'+new Date(r.at).toLocaleString()+'</span></div>'
+          +'<div class="qbody">'+esc(r.message)+'</div>'
+          +'<div class="qactions">'+(done?'<span class="status-pill sp-sched">✓ Done</span>':'<button class="btn btn-approve" data-done="'+r.id+'">Mark done</button>')+'</div></div>';
+      }).join("");
+    }).catch(function(){});
+  }
+  document.getElementById("inbox").addEventListener("click",function(e){
+    var b=e.target.closest("button[data-done]"); if(!b)return;
+    fetch(API+"/api/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"status",id:b.getAttribute("data-done"),status:"done"})})
+      .then(function(){ renderInbox(); });
+  });
+  renderInbox();
 
   renderSeo(); renderService();
   renderCreate();

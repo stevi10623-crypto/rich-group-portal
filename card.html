@@ -3,63 +3,61 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Anita Rich — The Rich Group</title>
+<title>Digital Card — The Rich Group</title>
 <style>
-  :root{--burg:#8f2129;--ink:#1c1a1a;--cream:#f6f2ec;--line:#e6e0d8}
+  :root{--burg:#8f2129}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Georgia,"Times New Roman",serif;background:#211f1f;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
-  .card{background:var(--cream);width:100%;max-width:420px;min-height:100vh;display:flex;flex-direction:column}
-  .top{background:linear-gradient(160deg,#a5303a,var(--burg));color:#fff;padding:40px 28px 30px;text-align:center;position:relative}
-  .photo{width:120px;height:120px;border-radius:50%;border:4px solid rgba(255,255,255,.85);object-fit:cover;margin:0 auto 14px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700;color:var(--burg)}
+  body{font-family:Georgia,"Times New Roman",serif;background:#211f1f;display:flex;justify-content:center;min-height:100vh}
+  .card{background:#f6f2ec;width:100%;max-width:420px;min-height:100vh;display:flex;flex-direction:column}
+  .top{color:#fff;padding:40px 28px 30px;text-align:center;position:relative}
+  .logo{max-height:38px;margin-bottom:12px;filter:brightness(0) invert(1);opacity:.95}
+  .photo{width:120px;height:120px;border-radius:50%;border:4px solid rgba(255,255,255,.85);object-fit:cover;margin:0 auto 14px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700}
   .name{font-size:26px;letter-spacing:.03em}
   .tl{font-size:13px;opacity:.92;margin-top:5px;line-height:1.5}
   .company{margin-top:8px;font-size:12px;letter-spacing:.25em;text-transform:uppercase;opacity:.85}
   .body{padding:24px 26px;flex:1}
-  .btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;margin-bottom:11px;background:#fff;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;font-weight:600;transition:.15s}
-  .btn:hover{border-color:var(--burg);transform:translateY(-1px)}
-  .btn .ic{width:22px;text-align:center;color:var(--burg);font-size:17px}
-  .save{background:var(--burg);color:#fff;justify-content:center}
-  .save .ic{color:#fff}
+  .btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;margin-bottom:11px;background:#fff;border:1px solid #e6e0d8;border-radius:12px;text-decoration:none;color:#1c1a1a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;font-weight:600}
+  .btn:hover{transform:translateY(-1px)}
+  .btn .ic{width:22px;text-align:center;font-size:17px}
+  .save{color:#fff;justify-content:center}
   .socials{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
-  .socials a{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--burg);color:var(--burg);display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700;font-family:sans-serif}
+  .socials a{width:42px;height:42px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700;font-family:sans-serif}
   .foot{text-align:center;font-size:11px;color:#8a8378;padding:16px}
 </style>
 </head>
 <body>
-  <div class="card">
-    <div class="top">
-      <div class="photo" id="photo">AR</div>
-      <div class="name">Anita Rich</div>
-      <div class="tl">Founder &amp; CEO, The Rich Group<br>Broker, CRS · Luxury Estates Director</div>
-      <div class="company">The Rich Group</div>
-    </div>
-    <div class="body">
-      <a class="btn save" href="#" id="vcard"><span class="ic">↓</span> Save to Contacts</a>
-      <a class="btn" href="tel:+18186322258"><span class="ic">✆</span> (818) 632-2258</a>
-      <a class="btn" href="https://therichgroup.la"><span class="ic">🌐</span> therichgroup.la</a>
-      <a class="btn" href="https://maps.google.com/?q=12711+Ventura+Blvd+110+Studio+City+CA+91604"><span class="ic">📍</span> 12711 Ventura Blvd #110, Studio City</a>
-      <div class="socials">
-        <a href="https://instagram.com/therichgroup">IG</a>
-        <a href="https://facebook.com/TheRichGroup.LA">f</a>
-        <a href="https://linkedin.com/in/anitarich">in</a>
-        <a href="https://x.com/richwithresults">X</a>
-        <a href="https://youtube.com/user/lifewithrich">▶</a>
-      </div>
-    </div>
-    <div class="foot">Keller Williams · CA DRE# 00782527</div>
-  </div>
+  <div class="card" id="card"><div class="body"><p style="color:#8a8378">Loading…</p></div></div>
 <script>
-  // vCard download (Save to Contacts)
-  var vc=["BEGIN:VCARD","VERSION:3.0","N:Rich;Anita;;;","FN:Anita Rich",
-    "ORG:The Rich Group","TITLE:Founder & CEO / Broker",
-    "TEL;TYPE=WORK,VOICE:+18186322258","URL:https://therichgroup.la",
-    "ADR;TYPE=WORK:;;12711 Ventura Blvd #110;Studio City;CA;91604;USA","END:VCARD"].join("\n");
-  document.getElementById("vcard").addEventListener("click",function(e){
-    e.preventDefault();
-    var a=document.createElement("a");
-    a.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(vc);
-    a.download="anita-rich.vcf"; a.click();
-  });
+  var API=(location.hostname.indexOf("vercel.app")>-1)?"https://rgapi.myroostcrm.com":"";
+  var slug=new URLSearchParams(location.search).get("slug")||(location.pathname.split("/card/")[1])||"anita-rich";
+  var SOC={instagram:"IG",facebook:"f",linkedin:"in",x:"X",youtube:"▶",compass:"C"};
+  function esc(s){var d=document.createElement("div");d.textContent=s||"";return d.innerHTML;}
+  function render(c){
+    var burg=c.brandColor||"#8f2129";
+    var initials=(c.name||"").split(" ").map(function(w){return w[0]}).join("").slice(0,2).toUpperCase();
+    var photo=c.photoUrl?'<img class="photo" src="'+c.photoUrl+'" alt="">':'<div class="photo" style="color:'+burg+'">'+initials+'</div>';
+    var logo=c.logoUrl?'<img class="logo" src="'+c.logoUrl+'" alt="">':'';
+    var tl=(c.titleLines||[]).map(esc).join("<br>");
+    var phones=(c.phones||[]).map(function(p){return '<a class="btn" href="tel:'+p.replace(/[^0-9+]/g,"")+'"><span class="ic" style="color:'+burg+'">✆</span> '+esc(p)+'</a>'}).join("");
+    var email=c.email?'<a class="btn" href="mailto:'+esc(c.email)+'"><span class="ic" style="color:'+burg+'">✉</span> '+esc(c.email)+'</a>':'';
+    var web=c.website?'<a class="btn" href="'+esc(c.website)+'"><span class="ic" style="color:'+burg+'">🌐</span> '+esc(c.website.replace(/^https?:\/\//,""))+'</a>':'';
+    var addr=c.address?'<a class="btn" href="https://maps.google.com/?q='+encodeURIComponent(c.address)+'"><span class="ic" style="color:'+burg+'">📍</span> '+esc(c.address)+'</a>':'';
+    var socials=(c.socials||[]).filter(function(s){return s.url}).map(function(s){return '<a href="'+esc(s.url)+'" style="border-color:'+burg+';color:'+burg+'">'+(SOC[s.type]||s.type[0].toUpperCase())+'</a>'}).join("");
+    document.getElementById("card").innerHTML=
+      '<div class="top" style="background:linear-gradient(160deg,'+burg+'dd,'+burg+')">'+logo+photo
+      +'<div class="name">'+esc(c.name)+'</div><div class="tl">'+tl+'</div>'
+      +(c.company?'<div class="company">'+esc(c.company)+'</div>':'')+'</div>'
+      +'<div class="body"><a class="btn save" id="vc" href="#" style="background:'+burg+'"><span class="ic">↓</span> Save to Contacts</a>'
+      +phones+email+web+addr+(socials?'<div class="socials">'+socials+'</div>':'')+'</div>'
+      +(c.brokerageLine?'<div class="foot">'+esc(c.brokerageLine)+'</div>':'');
+    var vc=["BEGIN:VCARD","VERSION:3.0","FN:"+(c.name||""),"ORG:"+(c.company||""),"TITLE:"+((c.titleLines||[])[0]||"")]
+      .concat((c.phones||[]).map(function(p){return "TEL;TYPE=WORK,VOICE:"+p.replace(/[^0-9+]/g,"")}))
+      .concat(c.email?["EMAIL:"+c.email]:[]).concat(c.website?["URL:"+c.website]:[]).concat(["END:VCARD"]).join("\n");
+    var b=document.getElementById("vc"); if(b)b.addEventListener("click",function(e){e.preventDefault();var a=document.createElement("a");a.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(vc);a.download=(c.slug||"card")+".vcf";a.click();});
+  }
+  fetch(API+"/api/card?slug="+encodeURIComponent(slug)).then(function(r){return r.json()})
+    .then(function(c){ if(c&&c.name) render(c); else document.getElementById("card").innerHTML='<div class="body"><p>Card not found.</p></div>'; })
+    .catch(function(){ document.getElementById("card").innerHTML='<div class="body"><p>Could not load card.</p></div>'; });
 </script>
 </body>
 </html>

@@ -6,12 +6,14 @@ const fs = require("fs");
 const path = require("path");
 const FILE = path.join(__dirname, "..", "data", "requests.json");
 const WEBHOOK = process.env.REQUEST_WEBHOOK || ""; // optional: Telegram/Slack/etc. URL
+const { notify } = require("./_notify"); // real SMS + email to Steve (no-ops until creds set)
 
 function load() { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch { return []; } }
 function store(list) {
   fs.mkdirSync(path.dirname(FILE), { recursive: true });
   fs.writeFileSync(FILE, JSON.stringify(list, null, 2));
 }
+function uid() { return "req_" + Date.now() + "_" + Math.floor(Math.random() * 1e6); }
 
 module.exports = async (req, res) => {
   try {
@@ -26,7 +28,7 @@ module.exports = async (req, res) => {
       const { category, message } = req.body || {};
       if (!message) return res.status(400).json({ error: "message required" });
       const entry = {
-        id: "req_" + load().length + "_" + message.slice(0, 8).replace(/\W/g, ""),
+        id: uid(),
         at: new Date().toISOString(),
         agent: "The Rich Group — Anita Rich",
         category: category || "General",
@@ -34,11 +36,13 @@ module.exports = async (req, res) => {
         status: "new",
       };
       const list = load(); list.unshift(entry); store(list.slice(0, 500));
-      // best-effort notify Steve — never blocks the user if it fails
+      // Real alert to Steve (SMS + email) + optional webhook. Best-effort, never blocks.
+      const subject = `Rich Group portal — ${entry.category} request from Anita`;
+      notify(subject, message).catch(() => {});
       if (WEBHOOK) {
         fetch(WEBHOOK, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: `New portal request from Anita [${entry.category}]: ${message}` }),
+          body: JSON.stringify({ text: `${subject}: ${message}` }),
           signal: AbortSignal.timeout(5000),
         }).catch(() => {});
       }

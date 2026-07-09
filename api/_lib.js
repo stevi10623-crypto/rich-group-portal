@@ -109,11 +109,28 @@ function engineUrl(engine) {
 
 // Turn a post's topic/headline into a concrete, photographable LA real-estate
 // scene that MATCHES the post — no text, no people. Falls back gracefully.
+// Topic-aware fallbacks so different post TYPES get visibly different images
+// even if the scene-writing AI call fails.
+function fallbackScene(topic) {
+  const t = (topic || "").toLowerCase();
+  const table = [
+    [/sold|closed|closing|under contract/, "a happy couple holding house keys on the porch of a nice home, sunny afternoon"],
+    [/open house|showing|tour/, "an inviting open front door of a bright Los Angeles home, potted flowers, midday light"],
+    [/rate|mortgage|economy|fed|financ|price|afford/, "a couple reviewing home paperwork at a sunlit kitchen table with coffee, soft morning light"],
+    [/neighborhood|community|local|spotlight|studio city|sherman oaks|encino|valley/, "a leafy Los Angeles residential street with character homes and tall trees, afternoon sun"],
+    [/tip|advice|guide|first.?time|buyer|seller|checklist/, "a friendly real-estate agent chatting with clients on a home's front steps, natural daylight"],
+    [/holiday|july|fourth|4th|celebration|summer|memorial|labor/, "a cheerful suburban Los Angeles street on a bright summer day, blue sky, subtle festive touches"],
+    [/pool|luxury|estate|listing|listed/, "a modern Los Angeles home with a sparkling backyard pool and patio, clear daylight"],
+  ];
+  for (const [re, sc] of table) if (re.test(t)) return sc;
+  return "an upscale Spanish-style home on a palm-lined Los Angeles street, warm natural light";
+}
+
 async function sceneFromText(topic) {
-  const fallback = "an upscale Spanish-style residential street in the Los Angeles hills, manicured lawns, tall palm trees, warm evening sunlight on white stucco homes";
+  const fallback = fallbackScene(topic);
   if (!topic || !topic.trim()) return fallback;
   try {
-    const sys = "You turn a real-estate social-post topic into ONE short visual scene (8-16 words) for a photograph. It must be a REAL, photographable Los Angeles real-estate scene that visually matches the post's subject/mood (e.g. rates/economy -> a couple reviewing paperwork outside a nice home; just sold -> a 'SOLD' sign at a home; open house -> an inviting front entrance). NO text/words/signs-with-writing, NO logos. Return ONLY the scene phrase, nothing else.";
+    const sys = "You turn a real-estate social-post topic into ONE short, SPECIFIC visual scene (10-18 words) for a photograph. Make it DISTINCT and clearly matched to THIS post's subject and mood — vary the setting, time of day, people, and framing so two different posts never look alike (e.g. rates/economy -> a couple reviewing paperwork at a kitchen table; just sold -> a couple with keys on a porch; open house -> an inviting front entrance; market update -> a real-estate agent on a laptop in a bright office; holiday -> a festive neighborhood street). Real, photographable Los Angeles scenes. NO text/words/signs-with-writing, NO logos. Return ONLY the scene phrase.";
     const scene = await ollama([{ role: "system", content: sys }, { role: "user", content: `Topic: ${topic}` }], 60);
     return (scene || "").replace(/^["'\s]+|["'\s.]+$/g, "").slice(0, 200) || fallback;
   } catch { return fallback; }
@@ -122,7 +139,8 @@ async function sceneFromText(topic) {
 async function submitImage(brief, aspect, engine) {
   const dims = aspect === "landscape" ? [1216, 832] : aspect === "square" ? [1024, 1024] : [832, 1216];
   const scene = await sceneFromText(brief);
-  const prompt = `Golden hour real estate photography of ${scene}, natural warm light, photorealistic, ultra sharp detail`;
+  // No fixed "golden hour" wrapper — let the scene carry its own light/mood so images vary.
+  const prompt = `Professional photograph: ${scene}. Photorealistic, natural light, sharp focus, high detail, no text, no watermark`;
   const seed = Math.floor(Math.random() * 2_000_000_000);
   const wf = engine === "final"
     ? flux2Workflow(prompt, dims[0], dims[1], seed)

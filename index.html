@@ -140,10 +140,11 @@
       <div class="sub">Sign in to review and approve your marketing.</div>
       <form id="loginForm">
         <div class="field"><label>Email</label><input type="email" id="email" value="anita@therichgroup.la" autocomplete="username"></div>
-        <div class="field"><label>Password</label><input type="password" id="pass" value="demo1234" autocomplete="current-password"></div>
+        <div class="field"><label>Password</label><input type="password" id="pass" placeholder="Your password" autocomplete="current-password"></div>
+        <div id="loginErr" style="display:none;color:var(--red);font-size:12.5px;margin-bottom:6px"></div>
         <button class="lbtn" type="submit">Sign in</button>
       </form>
-      <div class="lhint">Demo portal · credentials pre-filled — just click Sign in</div>
+      <div class="lhint">Password is <b>demo1234</b> until you change it in Settings (⚙).</div>
       <div class="lfoot">Powered by Steve's Dev &amp; Data · (818) 371-8488</div>
     </div>
   </div>
@@ -600,16 +601,22 @@
 
         <section class="page" id="settings">
           <div class="section" style="margin-top:0">
-            <h2>Agent settings</h2>
-            <div class="desc">Tenant configuration (what makes this multi-tenant).</div>
-            <div style="font-size:13.5px;line-height:2.2;color:#b3bdc9">
-              <div><b>Business:</b> The Rich Group</div>
-              <div><b>Address:</b> 12711 Ventura Blvd #110, Studio City, CA 91604</div>
-              <div><b>Phone:</b> (818) 632-2258</div>
-              <div><b>Markets:</b> Sherman Oaks, Studio City, Valley Village, Encino +</div>
-              <div><b>Brand voice:</b> Warm, expert, 30+ years, no hype</div>
-              <div><b>Plan:</b> Growth · <b>Cadence:</b> 2 posts / month</div>
-              <div><b>Connected:</b> Google Business <span style="color:var(--amber)">(pending claim)</span>, Website, Instagram, YouTube</div>
+            <h2>Your business info</h2>
+            <div class="desc">Update your details any time. Used across your card, posts and reports.</div>
+            <div id="setBiz" style="max-width:620px"></div>
+            <button class="btn btn-approve" id="setBizSave" style="margin-top:12px;padding:11px 20px">Save business info</button>
+            <span class="muted" id="setBizMsg" style="margin-left:10px"></span>
+          </div>
+          <div class="section">
+            <h2>Change password</h2>
+            <div class="desc">This is the password you use to sign in. Default is <b>demo1234</b> until you change it.</div>
+            <div style="max-width:360px">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--grey);margin:8px 0 4px">Current password</label>
+              <input type="password" id="pwCur" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--text)">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--grey);margin:10px 0 4px">New password</label>
+              <input type="password" id="pwNew" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--text)">
+              <button class="btn btn-approve" id="pwSave" style="margin-top:12px;padding:11px 20px">Update password</button>
+              <span class="muted" id="pwMsg" style="margin-left:10px"></span>
             </div>
           </div>
         </section>
@@ -652,7 +659,15 @@
   // ---- login ----
   var login=document.getElementById("login"), app=document.getElementById("app");
   function enter(){ login.style.display="none"; app.classList.add("show"); }
-  document.getElementById("loginForm").addEventListener("submit",function(e){ e.preventDefault(); enter(); });
+  document.getElementById("loginForm").addEventListener("submit",function(e){ e.preventDefault();
+    var pw=document.getElementById("pass").value, err=document.getElementById("loginErr");
+    fetch(API+"/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"login",password:pw})})
+      .then(function(r){return r.json()}).then(function(d){
+        if(d.ok){ err.style.display="none"; enter(); }
+        else { err.textContent="Wrong password. (Default is demo1234 until you change it.)"; err.style.display="block"; }
+      })
+      .catch(function(){ enter(); }); // if the backend is unreachable, don't lock her out
+  });
   document.getElementById("logout").addEventListener("click",function(){ app.classList.remove("show"); login.style.display="flex"; });
 
   // ---- state ----
@@ -702,7 +717,32 @@
     if(!navHistory.length) return;
     gotoPage(navHistory.pop(), true);
   });
-  document.getElementById("gearBtn").addEventListener("click",function(){ gotoPage("settings"); });
+  document.getElementById("gearBtn").addEventListener("click",function(){ gotoPage("settings"); renderSettings(); });
+  // ---- Settings: editable business info + password ----
+  var BIZFIELDS=[["name","Business name"],["contact","Your name"],["phone","Phone"],["email","Email"],["website","Website"],["address","Address"],["markets","Markets you serve"],["voice","Brand voice"]];
+  function renderSettings(){
+    fetch(API+"/api/settings").then(function(r){return r.json()}).then(function(d){
+      var b=d.business||{};
+      document.getElementById("setBiz").innerHTML=BIZFIELDS.map(function(f){
+        return '<label style="display:block;font-size:12px;font-weight:600;color:var(--grey);margin:8px 0 4px">'+f[1]+'</label><input id="biz_'+f[0]+'" value="'+esc(b[f[0]]||"")+'" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--text)">';
+      }).join("");
+    }).catch(function(){});
+  }
+  document.getElementById("setBizSave").addEventListener("click",function(){
+    var biz={}; BIZFIELDS.forEach(function(f){ var el=document.getElementById("biz_"+f[0]); if(el)biz[f[0]]=el.value; });
+    fetch(API+"/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-business",business:biz})})
+      .then(function(r){return r.json()}).then(function(){ var m=document.getElementById("setBizMsg"); m.textContent="✅ Saved"; setTimeout(function(){m.textContent="";},2000); }).catch(function(){});
+  });
+  document.getElementById("pwSave").addEventListener("click",function(){
+    var cur=document.getElementById("pwCur").value, next=document.getElementById("pwNew").value, m=document.getElementById("pwMsg");
+    fetch(API+"/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"set-password",current:cur,next:next})})
+      .then(function(r){return r.json()}).then(function(d){
+        if(d.ok){ m.style.color="var(--teal)"; m.textContent="✅ Password updated"; document.getElementById("pwCur").value=""; document.getElementById("pwNew").value=""; }
+        else { m.style.color="var(--red)"; m.textContent=d.error||"Could not update"; }
+        setTimeout(function(){m.textContent="";},4000);
+      }).catch(function(){});
+  });
+  renderSettings();
 
   // ---- queue (real campaign content + server-side agent drafts) ----
   var QUEUE=(window.CAMPAIGN&&window.CAMPAIGN.queue)||[];

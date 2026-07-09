@@ -158,6 +158,7 @@
       </div>
       <nav class="nav" id="nav">
         <button data-p="dash" class="active"><span class="ic">▣</span> Dashboard</button>
+        <button data-p="assistant"><span class="ic">🎙</span> Assistant</button>
         <button data-p="create"><span class="ic">✦</span> Create Post</button>
         <button data-p="queue"><span class="ic">✎</span> Approvals <span class="badge" id="qbadge">4</span></button>
         <button data-p="content"><span class="ic">▤</span> Calendar</button>
@@ -260,6 +261,30 @@
                 <div>🟢 Blog post #1 drafted &amp; ready</div>
                 <div>🟢 6 client review requests queued</div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="assistant">
+          <div class="section" style="margin-top:0">
+            <h2>🎙 Your Assistant</h2>
+            <div class="desc">Just tell it what you need — like talking to a smart assistant. Try: "listing appointment at 3pm with Tina", "add a to-do to call the Nguyens back", "remind me to follow up Friday", or "note that the Kims want a pool."</div>
+            <div style="display:flex;gap:8px;margin:10px 0 6px">
+              <input id="paInput" placeholder="Type or tap Talk and just say it…" style="flex:1;padding:13px 15px;border:1px solid var(--line);border-radius:11px;font-size:15px;background:var(--soft);color:var(--text)">
+              <button class="btn btn-approve" id="paSend" style="padding:13px 20px">Go</button>
+            </div>
+            <div id="paReply" style="display:none;background:var(--soft);border:1px solid var(--line);border-radius:11px;padding:12px 15px;font-size:14px;margin-bottom:8px"></div>
+          </div>
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px">
+            <div class="section" style="margin-top:0">
+              <h2 style="font-size:16px">✅ To-Do</h2>
+              <div id="paTodos"></div>
+            </div>
+            <div class="section" style="margin-top:0">
+              <h2 style="font-size:16px">📅 Appointments</h2>
+              <div id="paAppts"></div>
+              <h2 style="font-size:16px;margin-top:16px">📝 Notes</h2>
+              <div id="paNotes"></div>
             </div>
           </div>
         </section>
@@ -679,7 +704,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Calendar",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",topics:"Daily Trends",brain:"The Brain",settings:"Settings"};
+  var titles={dash:"Dashboard",assistant:"Assistant",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Calendar",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",topics:"Daily Trends",brain:"The Brain",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",content:"4",leads:"5"};
@@ -743,6 +768,40 @@
       }).catch(function(){});
   });
   renderSettings();
+
+  // ---- Personal Assistant (talk/type -> to-dos, appointments, notes) ----
+  function renderAssistant(){
+    fetch(API+"/api/assistant").then(function(r){return r.json()}).then(function(d){
+      var td=d.todos||[], ap=d.appointments||[], nt=d.notes||[];
+      document.getElementById("paTodos").innerHTML=td.length?td.map(function(t){
+        return '<div class="qcard" style="padding:9px 13px;display:flex;align-items:center;gap:9px"><input type="checkbox" data-patodo="'+t.id+'" '+(t.done?"checked":"")+' style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0"><span style="flex:1;font-size:13px;color:var(--text)'+(t.done?";text-decoration:line-through;opacity:.6":"")+'">'+esc(t.title)+(t.date?' <span class="muted">('+esc(t.date)+(t.time?" "+esc(t.time):"")+')</span>':"")+'</span><button data-padel="'+t.id+'" data-list="todos" style="background:none;border:0;color:var(--red);cursor:pointer">✕</button></div>';
+      }).join(""):'<div class="muted">Nothing yet. Tell the assistant to add something.</div>';
+      document.getElementById("paAppts").innerHTML=ap.length?ap.map(function(a){
+        return '<div class="qcard" style="padding:9px 13px;display:flex;align-items:center;gap:9px"><span style="flex:1;font-size:13px;color:var(--text)"><b>'+esc(a.title)+'</b>'+(a.person?' with '+esc(a.person):"")+((a.time||a.date)?' <span class="muted">'+esc([a.date,a.time].filter(Boolean).join(" "))+'</span>':"")+'</span><button data-padel="'+a.id+'" data-list="appointments" style="background:none;border:0;color:var(--red);cursor:pointer">✕</button></div>';
+      }).join(""):'<div class="muted">No appointments yet.</div>';
+      document.getElementById("paNotes").innerHTML=nt.length?nt.map(function(n){
+        return '<div class="qcard" style="padding:9px 13px;display:flex;align-items:center;gap:9px"><span style="flex:1;font-size:13px;color:var(--text)">'+esc(n.title)+'</span><button data-padel="'+n.id+'" data-list="notes" style="background:none;border:0;color:var(--red);cursor:pointer">✕</button></div>';
+      }).join(""):'<div class="muted">No notes yet.</div>';
+    }).catch(function(){});
+  }
+  function paSend(){
+    var inp=document.getElementById("paInput"), cmd=inp.value.trim(); if(!cmd)return;
+    var rep=document.getElementById("paReply"); rep.style.display="block"; rep.textContent="On it…";
+    fetch(API+"/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({command:cmd})})
+      .then(function(r){return r.json()}).then(function(d){ rep.textContent="✅ "+(d.reply||d.answer||"Done."); inp.value=""; renderAssistant(); })
+      .catch(function(){ rep.textContent="Something went wrong — try again."; });
+  }
+  document.getElementById("paSend").addEventListener("click",paSend);
+  document.getElementById("paInput").addEventListener("keydown",function(e){ if(e.key==="Enter")paSend(); });
+  document.getElementById("paTodos").addEventListener("click",function(e){
+    var c=e.target.closest("[data-patodo]"); if(!c)return;
+    fetch(API+"/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"complete",id:c.getAttribute("data-patodo")})}).then(function(){renderAssistant();});
+  });
+  document.getElementById("assistant").addEventListener("click",function(e){
+    var d=e.target.closest("[data-padel]"); if(!d)return;
+    fetch(API+"/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete",id:d.getAttribute("data-padel"),list:d.getAttribute("data-list")})}).then(function(){renderAssistant();});
+  });
+  renderAssistant();
 
   // ---- queue (real campaign content + server-side agent drafts) ----
   var QUEUE=(window.CAMPAIGN&&window.CAMPAIGN.queue)||[];
@@ -1768,7 +1827,7 @@
       rec.onerror=function(){ on=false; b.textContent="🎤 Talk"; };
     }
     if(!SR){ return; } // unsupported browser: no mic buttons, typing still works
-    ["brief","askInput","adGoal","reqMsg","brainIn"].forEach(addMic);
+    ["paInput","brief","askInput","adGoal","reqMsg","brainIn"].forEach(addMic);
   })();
 
   renderSeo(); renderService();

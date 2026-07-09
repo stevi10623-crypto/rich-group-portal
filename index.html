@@ -172,6 +172,7 @@
         <button data-p="headshot"><span class="ic">☺</span> Headshot Studio</button>
         <button data-p="card"><span class="ic">▭</span> Digital Card</button>
         <button data-p="brain"><span class="ic">🧠</span> The Brain</button>
+        <button data-p="vault"><span class="ic">🔐</span> Anita Brain 2.0</button>
         <button data-p="reviews"><span class="ic">★</span> Reviews</button>
         <button data-p="gallery"><span class="ic">▦</span> Gallery</button>
         <button data-p="inbox"><span class="ic">✉</span> Requests <span class="badge" id="inboxBadge" style="display:none">0</span></button>
@@ -261,6 +262,23 @@
                 <div>🟢 Blog post #1 drafted &amp; ready</div>
                 <div>🟢 6 client review requests queued</div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="vault">
+          <div class="section" style="margin-top:0">
+            <h2>🔐 Anita Brain 2.0</h2>
+            <div class="desc">Your private password vault. Everything is locked with <b>your vault password</b> and encrypted right in your browser — nobody else (not even us) can read it. Store your Gmail, Compass, KW and anything else so you never have to remember them.</div>
+            <div id="vaultLock" style="max-width:400px;margin-top:14px"></div>
+            <div id="vaultMain" style="display:none">
+              <div style="display:flex;gap:8px;margin:6px 0 14px;flex-wrap:wrap">
+                <button class="btn btn-approve" id="vaultAdd" style="padding:9px 16px">+ Add a login</button>
+                <button class="btn btn-edit" id="vaultLockBtn" style="padding:9px 16px">🔒 Lock</button>
+                <span class="muted" id="vaultMsg" style="align-self:center"></span>
+              </div>
+              <div id="vaultForm" style="display:none;border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--soft);margin-bottom:14px;max-width:460px"></div>
+              <div id="vaultList"></div>
             </div>
           </div>
         </section>
@@ -704,7 +722,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",assistant:"Assistant",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Calendar",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",topics:"Daily Trends",brain:"The Brain",settings:"Settings"};
+  var titles={dash:"Dashboard",assistant:"Assistant",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Calendar",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",topics:"Daily Trends",brain:"The Brain",vault:"Anita Brain 2.0",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",content:"4",leads:"5"};
@@ -802,6 +820,74 @@
     fetch(API+"/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete",id:d.getAttribute("data-padel"),list:d.getAttribute("data-list")})}).then(function(){renderAssistant();});
   });
   renderAssistant();
+
+  // ---- Anita Brain 2.0: encrypted password vault (all crypto in-browser) ----
+  var vaultPass=null, vaultEntries=[], vaultBlob=null;
+  function b64(buf){ return btoa(String.fromCharCode.apply(null,new Uint8Array(buf))); }
+  function u8(str){ return Uint8Array.from(atob(str),function(c){return c.charCodeAt(0);}); }
+  async function vDeriveKey(pass,salt){
+    var km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pass),"PBKDF2",false,["deriveKey"]);
+    return crypto.subtle.deriveKey({name:"PBKDF2",salt:salt,iterations:150000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+  }
+  async function vEncrypt(entries,pass){
+    var salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+    var key=await vDeriveKey(pass,salt);
+    var ct=await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,new TextEncoder().encode(JSON.stringify(entries)));
+    return {salt:b64(salt),iv:b64(iv),ct:b64(ct)};
+  }
+  async function vDecrypt(blob,pass){
+    var key=await vDeriveKey(pass,u8(blob.salt));
+    var pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:u8(blob.iv)},key,u8(blob.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+  function vSave(){ return vEncrypt(vaultEntries,vaultPass).then(function(blob){ vaultBlob=blob; return fetch(API+"/api/vault",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({blob:blob})}); }); }
+  var IST='width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--text);font-size:13px;margin-bottom:8px';
+  function vShowLock(){
+    document.getElementById("vaultMain").style.display="none";
+    var el=document.getElementById("vaultLock"); el.style.display="block";
+    if(vaultBlob){
+      el.innerHTML='<label style="display:block;font-size:12px;font-weight:600;color:var(--grey);margin-bottom:5px">Enter your vault password</label>'
+        +'<input type="password" id="vPass" style="'+IST+'"><button class="btn btn-approve" id="vUnlock" style="padding:10px 18px;margin-top:4px">Unlock</button><div id="vErr" style="color:var(--red);font-size:12.5px;margin-top:8px"></div>';
+    } else {
+      el.innerHTML='<div style="font-size:13px;color:#b3bdc9;margin-bottom:10px">Create a vault password. You will use it to unlock your saved logins. <b style="color:var(--amber)">Write it down somewhere safe — for your security it cannot be recovered if you forget it.</b></div>'
+        +'<input type="password" id="vPass" placeholder="Choose a vault password" style="'+IST+'"><input type="password" id="vPass2" placeholder="Type it again" style="'+IST+'"><button class="btn btn-approve" id="vCreate" style="padding:10px 18px;margin-top:4px">Create my vault</button><div id="vErr" style="color:var(--red);font-size:12.5px;margin-top:8px"></div>';
+    }
+  }
+  function vShowMain(){ document.getElementById("vaultLock").style.display="none"; document.getElementById("vaultMain").style.display="block"; renderVault(); }
+  function renderVault(){
+    document.getElementById("vaultList").innerHTML=vaultEntries.length?vaultEntries.map(function(en,i){
+      return '<div class="qcard" style="padding:12px 15px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:center;gap:10px"><div style="flex:1;font-weight:600;color:var(--text)">'+esc(en.label||"(login)")+(en.url?' <a href="'+esc(en.url)+'" target="_blank" style="font-size:12px;font-weight:400;color:var(--accent);margin-left:6px">open</a>':"")+'</div>'
+        +'<button data-vedit="'+i+'" style="background:none;border:0;color:var(--accent);cursor:pointer;font-size:12px">edit</button><button data-vdel="'+i+'" style="background:none;border:0;color:var(--red);cursor:pointer;font-size:12px;margin-left:8px">delete</button></div>'
+        +(en.username?'<div style="font-size:13px;margin-top:6px;color:#b3bdc9">User: '+esc(en.username)+' <button data-vcopy="'+i+'" data-f="username" style="background:none;border:1px solid var(--line);border-radius:6px;color:var(--grey);cursor:pointer;font-size:11px;padding:1px 7px;margin-left:4px">copy</button></div>':"")
+        +'<div style="font-size:13px;margin-top:4px;color:#b3bdc9">Pass: <span id="vp'+i+'" data-hidden="1">••••••••••</span> <button data-vreveal="'+i+'" style="background:none;border:1px solid var(--line);border-radius:6px;color:var(--grey);cursor:pointer;font-size:11px;padding:1px 7px">show</button> <button data-vcopy="'+i+'" data-f="password" style="background:none;border:1px solid var(--line);border-radius:6px;color:var(--grey);cursor:pointer;font-size:11px;padding:1px 7px">copy</button></div>'
+        +(en.notes?'<div style="font-size:12px;margin-top:4px;color:var(--grey)">'+esc(en.notes)+'</div>':"")+'</div>';
+    }).join(""):'<div class="muted">No logins saved yet. Tap "+ Add a login".</div>';
+  }
+  function vShowForm(idx){
+    var en=(idx!=null)?vaultEntries[idx]:{label:"",username:"",password:"",url:"",notes:""};
+    var f=document.getElementById("vaultForm"); f.style.display="block"; f.dataset.idx=(idx!=null?idx:"");
+    f.innerHTML='<input id="vfLabel" placeholder="Name (e.g. Gmail, Compass, KW)" value="'+esc(en.label||"")+'" style="'+IST+'">'
+      +'<input id="vfUser" placeholder="Username / email" value="'+esc(en.username||"")+'" style="'+IST+'">'
+      +'<input id="vfPass" placeholder="Password" value="'+esc(en.password||"")+'" style="'+IST+'">'
+      +'<input id="vfUrl" placeholder="Website (optional)" value="'+esc(en.url||"")+'" style="'+IST+'">'
+      +'<input id="vfNotes" placeholder="Notes (optional)" value="'+esc(en.notes||"")+'" style="'+IST+'">'
+      +'<button class="btn btn-approve" id="vfSave" style="padding:9px 16px">Save</button> <button class="btn btn-edit" id="vfCancel" style="padding:9px 16px">Cancel</button>';
+  }
+  fetch(API+"/api/vault").then(function(r){return r.json()}).then(function(d){ vaultBlob=d.blob||null; vShowLock(); }).catch(function(){ vShowLock(); });
+  document.getElementById("vault").addEventListener("click",function(e){
+    var t=e.target, id=t.id;
+    if(id==="vUnlock"){ var p=document.getElementById("vPass").value; vDecrypt(vaultBlob,p).then(function(ents){ vaultPass=p; vaultEntries=ents||[]; vShowMain(); }).catch(function(){ document.getElementById("vErr").textContent="Wrong vault password."; }); return; }
+    if(id==="vCreate"){ var p1=document.getElementById("vPass").value, p2=document.getElementById("vPass2").value; if(p1.length<4){document.getElementById("vErr").textContent="Use at least 4 characters.";return;} if(p1!==p2){document.getElementById("vErr").textContent="The two passwords don't match.";return;} vaultPass=p1; vaultEntries=[]; vSave().then(function(){ vShowMain(); }); return; }
+    if(id==="vaultAdd"){ vShowForm(null); return; }
+    if(id==="vaultLockBtn"){ vaultPass=null; vaultEntries=[]; document.getElementById("vaultForm").style.display="none"; vShowLock(); return; }
+    if(id==="vfCancel"){ document.getElementById("vaultForm").style.display="none"; return; }
+    if(id==="vfSave"){ var idx=document.getElementById("vaultForm").dataset.idx; var en={label:document.getElementById("vfLabel").value,username:document.getElementById("vfUser").value,password:document.getElementById("vfPass").value,url:document.getElementById("vfUrl").value,notes:document.getElementById("vfNotes").value}; if(idx!==""){vaultEntries[Number(idx)]=en;}else{vaultEntries.unshift(en);} document.getElementById("vaultForm").style.display="none"; vSave().then(function(){ renderVault(); var m=document.getElementById("vaultMsg"); m.textContent="✅ Saved"; setTimeout(function(){m.textContent="";},1500); }); return; }
+    var rv=t.closest("[data-vreveal]"); if(rv){ var i=Number(rv.getAttribute("data-vreveal")); var sp=document.getElementById("vp"+i); if(sp.dataset.hidden==="1"){ sp.textContent=vaultEntries[i].password||""; sp.dataset.hidden="0"; rv.textContent="hide"; } else { sp.textContent="••••••••••"; sp.dataset.hidden="1"; rv.textContent="show"; } return; }
+    var cp=t.closest("[data-vcopy]"); if(cp){ var i2=Number(cp.getAttribute("data-vcopy")), fld=cp.getAttribute("data-f"); try{ navigator.clipboard.writeText(vaultEntries[i2][fld]||""); cp.textContent="copied!"; setTimeout(function(){cp.textContent="copy";},1200);}catch(x){} return; }
+    var ed=t.closest("[data-vedit]"); if(ed){ vShowForm(Number(ed.getAttribute("data-vedit"))); return; }
+    var dl=t.closest("[data-vdel]"); if(dl){ if(!confirm("Delete this saved login?"))return; vaultEntries.splice(Number(dl.getAttribute("data-vdel")),1); vSave().then(renderVault); return; }
+  });
 
   // ---- queue (real campaign content + server-side agent drafts) ----
   var QUEUE=(window.CAMPAIGN&&window.CAMPAIGN.queue)||[];

@@ -32,7 +32,8 @@ const TOPICS = [
   "US economy inflation cost of living 2026",
   "Federal Reserve interest rate news",
   "Los Angeles local news this week",
-  "Sherman Oaks Studio City community events",
+  "Sherman Oaks Studio City Encino community events",
+  "Van Nuys North Hollywood Toluca Lake Tarzana neighborhood news",
   "California housing market 2026",
 ];
 

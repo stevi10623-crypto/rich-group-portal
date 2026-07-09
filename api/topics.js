@@ -37,8 +37,13 @@ module.exports = async (req, res) => {
     if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
     const focus = (req.body || {}).focus || "";
     const queries = focus
-      ? [focus + " Los Angeles real estate", focus + " news"]
-      : ["Los Angeles mortgage rates news", "Sherman Oaks Studio City housing market", "top trending news today"];
+      ? [focus + " Sherman Oaks Los Angeles real estate", focus + " news"]
+      : [
+          "Los Angeles mortgage rates news",
+          "Sherman Oaks Studio City Encino housing market",
+          "Van Nuys North Hollywood Toluca Lake Tarzana real estate news",
+          "top trending news today",
+        ];
     const findings = [];
     for (const q of queries) { const r = await searx(q); if (r.length) findings.push(`## ${q}\n${r.join("\n")}`); }
 

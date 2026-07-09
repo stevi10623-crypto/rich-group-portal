@@ -869,7 +869,7 @@
     var f=document.getElementById("vaultForm"); f.style.display="block"; f.dataset.idx=(idx!=null?idx:"");
     f.innerHTML='<input id="vfLabel" placeholder="Name (e.g. Gmail, Compass, KW)" value="'+esc(en.label||"")+'" style="'+IST+'">'
       +'<input id="vfUser" placeholder="Username / email" value="'+esc(en.username||"")+'" style="'+IST+'">'
-      +'<input id="vfPass" placeholder="Password" value="'+esc(en.password||"")+'" style="'+IST+'">'
+      +'<div style="display:flex;gap:6px;margin-bottom:8px"><input id="vfPass" placeholder="Password" value="'+esc(en.password||"")+'" style="'+IST.replace(";margin-bottom:8px","")+';flex:1"><button class="btn btn-edit" id="vfGen" type="button" style="padding:0 12px;font-size:12px;white-space:nowrap">🎲 Generate</button></div>'
       +'<input id="vfUrl" placeholder="Website (optional)" value="'+esc(en.url||"")+'" style="'+IST+'">'
       +'<input id="vfNotes" placeholder="Notes (optional)" value="'+esc(en.notes||"")+'" style="'+IST+'">'
       +'<button class="btn btn-approve" id="vfSave" style="padding:9px 16px">Save</button> <button class="btn btn-edit" id="vfCancel" style="padding:9px 16px">Cancel</button>';
@@ -881,6 +881,7 @@
     if(id==="vCreate"){ var p1=document.getElementById("vPass").value, p2=document.getElementById("vPass2").value; if(p1.length<4){document.getElementById("vErr").textContent="Use at least 4 characters.";return;} if(p1!==p2){document.getElementById("vErr").textContent="The two passwords don't match.";return;} vaultPass=p1; vaultEntries=[]; vSave().then(function(){ vShowMain(); }); return; }
     if(id==="vaultAdd"){ vShowForm(null); return; }
     if(id==="vaultLockBtn"){ vaultPass=null; vaultEntries=[]; document.getElementById("vaultForm").style.display="none"; vShowLock(); return; }
+    if(id==="vfGen"){ var chars="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%*?"; var arr=crypto.getRandomValues(new Uint8Array(18)); var pw=""; for(var gi=0;gi<18;gi++)pw+=chars[arr[gi]%chars.length]; var pf=document.getElementById("vfPass"); pf.type="text"; pf.value=pw; return; }
     if(id==="vfCancel"){ document.getElementById("vaultForm").style.display="none"; return; }
     if(id==="vfSave"){ var idx=document.getElementById("vaultForm").dataset.idx; var en={label:document.getElementById("vfLabel").value,username:document.getElementById("vfUser").value,password:document.getElementById("vfPass").value,url:document.getElementById("vfUrl").value,notes:document.getElementById("vfNotes").value}; if(idx!==""){vaultEntries[Number(idx)]=en;}else{vaultEntries.unshift(en);} document.getElementById("vaultForm").style.display="none"; vSave().then(function(){ renderVault(); var m=document.getElementById("vaultMsg"); m.textContent="✅ Saved"; setTimeout(function(){m.textContent="";},1500); }); return; }
     var rv=t.closest("[data-vreveal]"); if(rv){ var i=Number(rv.getAttribute("data-vreveal")); var sp=document.getElementById("vp"+i); if(sp.dataset.hidden==="1"){ sp.textContent=vaultEntries[i].password||""; sp.dataset.hidden="0"; rv.textContent="hide"; } else { sp.textContent="••••••••••"; sp.dataset.hidden="1"; rv.textContent="show"; } return; }

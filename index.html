@@ -166,7 +166,7 @@
         <div id="moreNav" style="display:none">
         <button data-p="social"><span class="ic">⇄</span> Auto-Post Setup</button>
         <button data-p="ads"><span class="ic">◈</span> Ads</button>
-        <button data-p="topics"><span class="ic">💡</span> Post Ideas</button>
+        <button data-p="topics"><span class="ic">🔥</span> Daily Trends</button>
         <button data-p="reports"><span class="ic">▦</span> Reports</button>
         <button data-p="headshot"><span class="ic">☺</span> Headshot Studio</button>
         <button data-p="card"><span class="ic">▭</span> Digital Card</button>
@@ -572,11 +572,11 @@
 
         <section class="page" id="topics">
           <div class="section" style="margin-top:0">
-            <h2>💡 Post Ideas</h2>
-            <div class="desc">Not sure what to post? Get fresh, timely ideas pulled from today's news and your local market. Pick one and it drafts the post for you.</div>
+            <h2>🔥 Daily Trends</h2>
+            <div class="desc">Fresh, timely topics pulled from today's news and your local market. Tap <b>Write post</b> on any one and it writes the post + makes a matching image, straight to your Approval Queue.</div>
             <div style="display:flex;gap:8px;margin:8px 0 14px">
               <input id="topicFocus" placeholder="Optional: a topic to focus on (e.g. interest rates, Studio City, first-time buyers)" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--soft)">
-              <button class="btn btn-approve" id="topicsBtn" style="padding:11px 18px">Get ideas</button>
+              <button class="btn btn-approve" id="topicsBtn" style="padding:11px 18px">↻ Refresh trends</button>
             </div>
             <div id="topicsList"></div>
           </div>
@@ -679,7 +679,7 @@
   function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
 
   // ---- nav ----
-  var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Calendar",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",topics:"Post Ideas",brain:"The Brain",settings:"Settings"};
+  var titles={dash:"Dashboard",create:"Create Post",gallery:"Gallery",queue:"Approval Queue",seo:"SEO Plan",reports:"Reports",leads:"Leads",content:"Calendar",reviews:"Reviews",addons:"Add-ons",ads:"Ads",headshot:"Headshot Studio",card:"Digital Card",inbox:"Requests",social:"Auto-Post Setup",topics:"Daily Trends",brain:"The Brain",settings:"Settings"};
   // visible quick-keys: number badge on each nav item
   (function(){
     var map={dash:"1",create:"2",queue:"3",content:"4",leads:"5"};
@@ -1596,12 +1596,32 @@
       }).catch(function(){ b.textContent="Get ideas"; b.disabled=false; box.innerHTML='<div class="muted">Error — try again.</div>'; });
   });
   document.getElementById("topicsList").addEventListener("click",function(e){
+    var list=document.getElementById("topicsList");
+    var w=e.target.closest("[data-write]");
+    if(w){
+      var iw=(list._ideas||[])[Number(w.getAttribute("data-write"))]; if(!iw)return;
+      w.textContent="✍ Writing…"; w.disabled=true;
+      var brief=iw.title+". "+iw.angle;
+      Promise.all([
+        Promise.all(["facebook","instagram"].map(function(k){ return fetch(API+"/api/caption",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({kind:k,brief:brief})}).then(function(r){return r.json()}).then(function(d){return d.text?{k:k,text:d.text}:null;}); })),
+        quickImage(brief)
+      ]).then(function(arr){
+        var caps=arr[0].filter(Boolean), img=arr[1];
+        caps.forEach(function(c){ state.items.unshift({id:"u"+Date.now()+"_"+c.k,tag:"t-social",label:c.k.charAt(0).toUpperCase()+c.k.slice(1),publish:true,platforms:[c.k],ttl:"Trend: "+iw.title,when:"just now",body:c.text,image:img||null}); });
+        save(); renderQueue();
+        w.textContent="✅ In your Approval Queue";
+      }).catch(function(){ w.textContent="Try again"; w.disabled=false; });
+      return;
+    }
     var b=e.target.closest("[data-idea]"); if(!b)return;
-    var it=(document.getElementById("topicsList")._ideas||[])[Number(b.getAttribute("data-idea"))]; if(!it)return;
+    var it=(list._ideas||[])[Number(b.getAttribute("data-idea"))]; if(!it)return;
     document.getElementById("brief").value=it.title+". "+it.angle;
     document.querySelector('[data-p="create"]').click();
     var bf=document.getElementById("brief"); if(bf){ try{bf.scrollIntoView({behavior:"smooth"});}catch(x){} }
   });
+  // auto-load trends the first time she opens the page
+  var trendsLoaded=false;
+  document.querySelector('.nav button[data-p="topics"]').addEventListener("click",function(){ if(!trendsLoaded){ trendsLoaded=true; document.getElementById("topicsBtn").click(); } });
 
   // ---- Brain interview ----
   var BQ=[["What makes you different from other agents?","business"],["Who is your ideal client / your niche?","ideal-client"],["Describe your voice and tone in a few words.","voice"],["What should we NEVER say or do in your posts?","dont"],["Anything else the AI should always know about you?","business"]];

@@ -44,11 +44,12 @@ module.exports = async (req, res) => {
 
     const sys =
       "You are a real-estate content strategist for The Rich Group (Anita Rich, Sherman Oaks/Studio City). " +
-      "Suggest 6 SPECIFIC, timely post ideas that would grab attention and win clients. Mix trending-news angles with " +
-      "evergreen local ideas. Each must be genuinely useful, non-partisan, human. " +
-      "Output EXACTLY 6 lines, each: `Title | one-line angle`. No numbering, no markdown.";
-    const raw = await ollama(sys, `Recent context:\n${findings.join("\n\n") || "(no fresh results — use evergreen local ideas)"}\n\nGive the 6 ideas now.`, 700);
-    const ideas = raw.split("\n").map((l) => l.trim()).filter((l) => l.includes("|")).slice(0, 6)
+      "Suggest 14 SPECIFIC, timely post ideas she could post about TODAY that would grab attention and win clients. Mix trending-news angles " +
+      "(rates, the economy, local LA happenings, tech/culture headlines) with evergreen local real-estate ideas. Each must be genuinely useful, " +
+      "non-partisan, human, and accurate — do NOT invent fake sales, addresses, or statistics. " +
+      "Output EXACTLY 14 lines, each: `Title | one-line angle`. No numbering, no markdown.";
+    const raw = await ollama(sys, `Recent context:\n${findings.join("\n\n") || "(no fresh results — use evergreen local ideas)"}\n\nGive the 14 ideas now.`, 1400);
+    const ideas = raw.split("\n").map((l) => l.trim()).filter((l) => l.includes("|")).slice(0, 15)
       .map((l) => { const [title, ...rest] = l.replace(/^[-*\d.\s]+/, "").split("|"); return { title: title.trim(), angle: rest.join("|").trim() }; });
     res.status(200).json({ ideas });
   } catch (e) {
